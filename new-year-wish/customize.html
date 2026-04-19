@@ -1639,7 +1639,11 @@
             currentData.hero.backgroundImage = document.getElementById('hero-background-image').value.trim();
             currentData.hero.audioUrl = document.getElementById('hero-audio-url').value.trim();
             const audioVolumeRaw = document.getElementById('hero-audio-volume').value;
-            currentData.hero.audioVolume = audioVolumeRaw === '' ? 0.55 : Math.max(0, Math.min(1, Number(audioVolumeRaw) || 0.55));
+            // Use an explicit isNaN check so a volume of 0 (mute) is honoured
+            // — `Number(x) || 0.55` would silently snap 0 back to 0.55.
+            currentData.hero.audioVolume = (audioVolumeRaw !== '' && !isNaN(Number(audioVolumeRaw)))
+                ? Math.max(0, Math.min(1, Number(audioVolumeRaw)))
+                : 0.55;
 
             // Chronograph dial labels
             currentData.chronograph.dialLabel       = document.getElementById('chrono-dial-label').value;

@@ -24,7 +24,12 @@ window.HeroAudio = function (opts) {
     audio.loop = true;
     audio.preload = 'auto';
     audio.muted = true; // required for autoplay on most browsers
-    audio.volume = Math.max(0, Math.min(1, Number(opts.volume) || 0.55));
+    // Use an explicit null/NaN check so the caller can legitimately pass 0
+    // to mute. `Number(opts.volume) || 0.55` would treat 0 as falsy.
+    const requestedVol = (opts.volume != null && !isNaN(Number(opts.volume)))
+        ? Number(opts.volume)
+        : 0.55;
+    audio.volume = Math.max(0, Math.min(1, requestedVol));
     audio.crossOrigin = 'anonymous';
     audio.className = 'hero-audio-el';
 

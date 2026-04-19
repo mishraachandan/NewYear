@@ -190,6 +190,11 @@ window.Hero = function (data, onStartCallback) {
     });
     btn.addEventListener('animationend', function onReveal(e) {
         if (e.animationName === 'luxuryFadeIn') {
+            // Clear the inline fade-in animation so the CSS class's
+            // `.hero-cta.is-blinking { animation: heroCtaBlink ... }`
+            // rule can take effect — inline styles would otherwise win.
+            btn.style.animation = '';
+            btn.style.opacity = '1';
             btn.classList.add('is-blinking');
             btn.removeEventListener('animationend', onReveal);
         }
