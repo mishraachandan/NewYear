@@ -34,25 +34,11 @@ window.Nav = function Nav(siteData) {
         brand.textContent = title;
     }
 
-    // Links
-    const links = document.createElement('div');
-    links.className = 'nav-links';
-    navItems.forEach(function (item) {
-        if (!item || !item.label) return;
-        const a = document.createElement('a');
-        a.textContent = String(item.label);
-        const target = item.target ? String(item.target) : '';
-        a.href = target ? '#' + target : '#';
-        a.addEventListener('click', function (e) {
-            if (!target) return;
-            const el = document.getElementById(target);
-            if (el) {
-                e.preventDefault();
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-        links.appendChild(a);
-    });
+    // Chapter labels are intentionally NOT rendered in the top bar — the user
+    // preferred the editorial layout to rely on scrolling + chapter markers
+    // for wayfinding rather than a chatty top nav. The `navItems` data is kept
+    // on the site config (customize.html) for potential future use.
+    void navItems;
 
     // Customize link
     const customize = document.createElement('a');
@@ -61,31 +47,11 @@ window.Nav = function Nav(siteData) {
     customize.textContent = 'Customize';
 
     nav.appendChild(brand);
-    nav.appendChild(links);
     nav.appendChild(customize);
 
-    // Scrollspy-ish: mark the nearest section active.
     function onScroll() {
         if (window.scrollY > 40) nav.classList.add('is-scrolled');
         else nav.classList.remove('is-scrolled');
-
-        const anchors = links.querySelectorAll('a');
-        let best = null;
-        let bestDist = Infinity;
-        anchors.forEach(function (a) {
-            const id = (a.getAttribute('href') || '').replace('#', '');
-            if (!id) return;
-            const el = document.getElementById(id);
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-            const dist = Math.abs(rect.top - 80);
-            if (rect.top < window.innerHeight * 0.4 && dist < bestDist) {
-                bestDist = dist;
-                best = a;
-            }
-        });
-        anchors.forEach(function (a) { a.classList.remove('is-active'); });
-        if (best) best.classList.add('is-active');
     }
     window.addEventListener('scroll', onScroll, { passive: true });
 

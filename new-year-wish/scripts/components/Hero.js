@@ -19,13 +19,13 @@ window.Hero = function (data, onStartCallback) {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         textAlign: 'center',
         background: 'transparent',
         position: 'relative',
         overflow: 'hidden',
-        padding: '2rem',
+        padding: 'clamp(5.5rem, 12vh, 9rem) 2rem 2rem 2rem',
         isolation: 'isolate'
     });
 
@@ -52,25 +52,18 @@ window.Hero = function (data, onStartCallback) {
         section.appendChild(veil);
     }
 
-    // Subtle gold line decoration at top
-    const topLine = document.createElement('div');
-    Object.assign(topLine.style, {
-        position: 'absolute',
-        top: '40px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '60px',
-        height: '1px',
-        background: 'var(--gradient-gold)',
-        opacity: '0.6',
-        zIndex: '2'
-    });
-    section.appendChild(topLine);
-
-    // Content wrapper
+    // Content wrapper — sits in the upper third so text stays above the
+    // black-hole disk glare and remains readable against the cosmic scene.
     const content = document.createElement('div');
-    content.style.position = 'relative';
-    content.style.zIndex = '2';
+    Object.assign(content.style, {
+        position: 'relative',
+        zIndex: '4',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        maxWidth: '760px',
+        margin: '0 auto'
+    });
 
     // Small greeting label
     const greeting = document.createElement('p');
@@ -79,10 +72,11 @@ window.Hero = function (data, onStartCallback) {
     Object.assign(greeting.style, {
         fontSize: '0.9rem',
         color: 'var(--color-primary)',
-        marginBottom: '2rem',
+        marginBottom: '1.5rem',
         letterSpacing: '6px',
         textTransform: 'uppercase',
         fontWeight: '400',
+        textShadow: '0 2px 18px rgba(0,0,0,0.75)',
         opacity: '0',
         animation: 'luxuryFadeIn 1.5s ease forwards'
     });
@@ -91,13 +85,14 @@ window.Hero = function (data, onStartCallback) {
     const year = document.createElement('h1');
     year.textContent = safe(hero.year);
     Object.assign(year.style, {
-        fontSize: 'clamp(5rem, 18vw, 10rem)',
+        fontSize: 'clamp(4.2rem, 13vw, 8rem)',
         fontFamily: 'var(--font-heading)',
         fontWeight: '400',
         color: 'var(--color-text-main)',
-        marginBottom: '1.5rem',
+        marginBottom: '1.25rem',
         lineHeight: '1',
         letterSpacing: '0.05em',
+        textShadow: '0 4px 40px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6)',
         opacity: '0',
         animation: 'luxuryFadeIn 1.5s ease 0.3s forwards'
     });
@@ -108,7 +103,7 @@ window.Hero = function (data, onStartCallback) {
         width: '80px',
         height: '1px',
         background: 'var(--color-primary)',
-        margin: '0 auto 2rem auto',
+        margin: '0 auto 1.5rem auto',
         opacity: '0',
         animation: 'luxuryFadeIn 1.5s ease 0.5s forwards'
     });
@@ -120,8 +115,9 @@ window.Hero = function (data, onStartCallback) {
         fontFamily: 'var(--font-heading)',
         fontWeight: '400',
         fontStyle: 'italic',
-        color: 'var(--color-text-muted)',
+        color: '#dcdcdc',
         marginBottom: '1rem',
+        textShadow: '0 2px 20px rgba(0,0,0,0.8)',
         opacity: '0',
         animation: 'luxuryFadeIn 1.5s ease 0.6s forwards'
     });
@@ -139,12 +135,13 @@ window.Hero = function (data, onStartCallback) {
     const message = document.createElement('p');
     message.textContent = safe(hero.message);
     Object.assign(message.style, {
-        maxWidth: '500px',
+        maxWidth: '520px',
         fontSize: '1rem',
         fontFamily: 'var(--font-body)',
-        margin: '0 auto 3rem auto',
+        margin: '0 auto 2.25rem auto',
         lineHeight: '1.8',
-        color: 'var(--color-text-muted)',
+        color: '#cfcfcf',
+        textShadow: '0 2px 18px rgba(0,0,0,0.85)',
         opacity: '0',
         animation: 'luxuryFadeIn 1.5s ease 0.8s forwards'
     });

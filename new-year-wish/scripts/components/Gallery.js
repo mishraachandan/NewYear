@@ -7,52 +7,15 @@
  */
 
 window.Gallery = function (memorySections, sectionTitle) {
+    // eslint-disable-line no-unused-vars -- sectionTitle is rendered by the
+    // editorial chapter-header in app.js; kept in the signature for back-compat.
+    void sectionTitle;
     const section = document.createElement('section');
     section.className = 'gallery-section';
     Object.assign(section.style, {
-        padding: '8rem 2rem',
+        padding: '2rem 2rem 6rem 2rem',
         background: 'var(--color-bg)'
     });
-
-    // Section header - starts hidden
-    const header = document.createElement('div');
-    header.className = 'reveal-on-scroll';
-    Object.assign(header.style, {
-        textAlign: 'center',
-        marginBottom: '5rem'
-    });
-
-    const subtitle = document.createElement('p');
-    subtitle.textContent = 'A Collection of';
-    Object.assign(subtitle.style, {
-        fontSize: '0.9rem',
-        color: 'var(--color-primary)',
-        letterSpacing: '4px',
-        textTransform: 'uppercase',
-        marginBottom: '1rem'
-    });
-
-    const title = document.createElement('h2');
-    title.textContent = sectionTitle || 'Our Memories';
-    Object.assign(title.style, {
-        fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-        fontFamily: 'var(--font-heading)',
-        fontWeight: '400',
-        color: 'var(--color-text-main)',
-        marginBottom: '1rem'
-    });
-
-    const decorLine = document.createElement('div');
-    Object.assign(decorLine.style, {
-        width: '60px',
-        height: '1px',
-        background: 'var(--color-primary)',
-        margin: '0 auto'
-    });
-
-    header.appendChild(subtitle);
-    header.appendChild(title);
-    header.appendChild(decorLine);
 
     // Memory Grid
     const grid = document.createElement('div');
@@ -69,7 +32,6 @@ window.Gallery = function (memorySections, sectionTitle) {
         grid.appendChild(card);
     });
 
-    section.appendChild(header);
     section.appendChild(grid);
 
     // Slideshow container
