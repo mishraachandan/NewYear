@@ -1001,8 +1001,12 @@
         // Deep-ensure keys — called after load/import so old saves gain new fields.
         function ensureShape(d) {
             d.site = { ...defaultData.site, ...(d.site || {}) };
+            // Always map() when sourcing from defaults so we never hold a live
+            // reference to defaultData.* — otherwise addX()/removeX() edits
+            // would mutate defaults in-place and "Reset to Defaults" would
+            // serialize the already-corrupted objects.
             d.site.nav = Array.isArray(d.site.nav) && d.site.nav.length
-                ? d.site.nav
+                ? d.site.nav.map(x => ({ ...x }))
                 : defaultData.site.nav.map(x => ({ ...x }));
             d.chapters = { ...defaultData.chapters, ...(d.chapters || {}) };
             Object.keys(defaultData.chapters).forEach(k => {
@@ -1011,7 +1015,7 @@
             d.hero = { ...defaultData.hero, ...(d.hero || {}) };
             d.chronograph = { ...defaultData.chronograph, ...(d.chronograph || {}) };
             d.chronograph.wishes = Array.isArray(d.chronograph.wishes) && d.chronograph.wishes.length
-                ? d.chronograph.wishes
+                ? d.chronograph.wishes.map(w => ({ ...w }))
                 : defaultData.chronograph.wishes.map(w => ({ ...w }));
             if (!d.galleryTitle) d.galleryTitle = defaultData.galleryTitle;
             if (!d.notesTitle)   d.notesTitle   = defaultData.notesTitle;
