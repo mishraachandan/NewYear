@@ -44,8 +44,10 @@ window.HeroAudio = function (opts) {
     const fallbackSrc = encode(String(opts.fallbackSrc || '').trim());
 
     const audio = document.createElement('audio');
+    audio.autoplay = true;
     audio.loop = true;
     audio.preload = 'auto';
+    audio.playsInline = true;
     audio.muted = true; // required for autoplay on most browsers
     // Use an explicit null/NaN check so the caller can legitimately pass 0
     // to mute. `Number(opts.volume) || 0.55` would treat 0 as falsy.
@@ -81,21 +83,52 @@ window.HeroAudio = function (opts) {
         if (p && typeof p.catch === 'function') {
             p.catch(() => {/* autoplay blocked; wait for gesture */});
         }
+        return p;
+    }
+
+    function detachUnlockListeners() {
+        document.removeEventListener('pointerdown', handleFirstGesture);
+        document.removeEventListener('pointermove', handleFirstGesture);
+        document.removeEventListener('mousemove', handleFirstGesture);
+        document.removeEventListener('keydown', handleFirstGesture);
+        document.removeEventListener('touchstart', handleFirstGesture);
     }
 
     function unlock() {
-        if (unlocked) return;
-        unlocked = true;
+        if (unlocked) return Promise.resolve(true);
+
         audio.muted = false;
         updateIcon();
-        tryPlay();
+
+        if (!audio.paused) {
+            unlocked = true;
+            detachUnlockListeners();
+            return Promise.resolve(true);
+        }
+
+        const p = audio.play();
+        if (!p || typeof p.then !== 'function') {
+            unlocked = true;
+            detachUnlockListeners();
+            return Promise.resolve(true);
+        }
+
+        return p.then(() => {
+            unlocked = true;
+            detachUnlockListeners();
+            return true;
+        }).catch(() => {
+            // Keep the component retryable on a later, browser-approved gesture.
+            audio.muted = true;
+            updateIcon();
+            return false;
+        });
     }
 
     toggleButton.addEventListener('click', () => {
         if (!unlocked) {
-            unlock();
             userPaused = false;
-            tryPlay();
+            unlock();
             return;
         }
         if (audio.muted) {
@@ -114,8 +147,11 @@ window.HeroAudio = function (opts) {
         if (!unlocked && !userPaused) unlock();
     }
 
-    document.addEventListener('pointerdown', handleFirstGesture, { once: true, passive: true });
-    document.addEventListener('keydown', handleFirstGesture, { once: true });
+    document.addEventListener('pointerdown', handleFirstGesture, { passive: true });
+    document.addEventListener('pointermove', handleFirstGesture, { passive: true });
+    document.addEventListener('mousemove', handleFirstGesture, { passive: true });
+    document.addEventListener('keydown', handleFirstGesture);
+    document.addEventListener('touchstart', handleFirstGesture, { passive: true });
 
     // Pause / resume as the hero enters / leaves the viewport when requested.
     if (pauseWhenHidden && opts.hero && 'IntersectionObserver' in window) {

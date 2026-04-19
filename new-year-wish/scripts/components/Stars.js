@@ -26,7 +26,9 @@ const Stars = () => {
     const CONFIG = {
         starCount: 500,
         shootingStarInterval: 3000,
-        baseSpeed: 0.15
+        baseSpeed: 0.18,
+        driftSpeedX: 0.06,
+        orbitSpeed: 0.00018
     };
 
     // Initialize
@@ -55,13 +57,21 @@ const Stars = () => {
         stars = [];
         for (let i = 0; i < CONFIG.starCount; i++) {
             const layer = Math.random(); // 0-1, determines depth
+            const originX = Math.random() * width;
+            const originY = Math.random() * height;
             stars.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
+                x: originX,
+                y: originY,
+                originX,
+                originY,
                 size: layer * 2 + 0.5,
                 baseOpacity: 0.3 + layer * 0.7,
                 opacity: Math.random(),
                 speed: CONFIG.baseSpeed * (0.5 + layer * 0.5),
+                driftX: CONFIG.driftSpeedX * (0.35 + layer * 0.9) * (Math.random() > 0.5 ? 1 : -1),
+                orbitRadius: 6 + layer * 28 + Math.random() * 20,
+                orbitAngle: Math.random() * Math.PI * 2,
+                orbitSpeed: CONFIG.orbitSpeed * (0.6 + layer * 2.2),
                 twinkleSpeed: 0.01 + Math.random() * 0.02,
                 twinklePhase: Math.random() * Math.PI * 2,
                 hue: [0, 45, 180, 200][Math.floor(Math.random() * 4)] // white, gold, cyan, blue
@@ -130,8 +140,16 @@ const Stars = () => {
         stars.forEach(star => {
             // Twinkle effect using sine wave
             star.twinklePhase += star.twinkleSpeed;
+            star.orbitAngle += star.orbitSpeed;
             const twinkle = (Math.sin(star.twinklePhase) + 1) / 2;
             star.opacity = star.baseOpacity * (0.5 + twinkle * 0.5);
+
+            // Slow parallax drift plus a tiny orbit so the star field feels
+            // more like a living galaxy than a fixed wallpaper.
+            star.originY -= star.speed;
+            star.originX += star.driftX;
+            star.x = star.originX + Math.cos(star.orbitAngle) * star.orbitRadius;
+            star.y = star.originY + Math.sin(star.orbitAngle * 0.85) * (star.orbitRadius * 0.55);
 
             // Draw star with glow
             const gradient = ctx.createRadialGradient(
@@ -139,7 +157,6 @@ const Stars = () => {
                 star.x, star.y, star.size * 2
             );
 
-            const hsl = `hsl(${star.hue}, 100%, 90%)`;
             gradient.addColorStop(0, `hsla(${star.hue}, 100%, 100%, ${star.opacity})`);
             gradient.addColorStop(0.5, `hsla(${star.hue}, 100%, 80%, ${star.opacity * 0.5})`);
             gradient.addColorStop(1, 'transparent');
@@ -155,14 +172,13 @@ const Stars = () => {
             ctx.fillStyle = `hsla(${star.hue}, 100%, 100%, ${star.opacity})`;
             ctx.fill();
 
-            // Movement - stars drift upward slowly
-            star.y -= star.speed;
-            star.x += (Math.random() - 0.5) * 0.1;
-
             // Wrap around
-            if (star.y < -10) {
-                star.y = height + 10;
-                star.x = Math.random() * width;
+            if (star.y < -40 || star.x < -40 || star.x > width + 40) {
+                star.originX = Math.random() * width;
+                star.originY = height + 30 + Math.random() * 40;
+                star.orbitAngle = Math.random() * Math.PI * 2;
+                star.x = star.originX;
+                star.y = star.originY;
             }
         });
 
