@@ -32,8 +32,8 @@ window.DATA = {
         // played while the hero is on screen. Leave empty to disable music.
         // Default: Hans Zimmer's "Day One" from the Interstellar soundtrack,
         // bundled at assets/interstellar-day-one.mp3.
-        audioUrl: "assets/interstellar-day-one.mp3",
-        audioVolume: 0.55
+        audioUrl: "assets/Intersteller Music.mp3",
+        audioVolume: 1.0
     },
     // Gallery has memory sections, each with multiple photos.
     galleryTitle: "Our Memories",
