@@ -67,7 +67,7 @@ window.Hero = function (data, onStartCallback) {
 
     // Small greeting label
     const greeting = document.createElement('p');
-    greeting.className = 'animate-fade-in';
+    greeting.className = 'animate-fade-in hero-greeting';
     greeting.textContent = safe(hero.greeting);
     Object.assign(greeting.style, {
         fontSize: '0.9rem',
@@ -108,8 +108,10 @@ window.Hero = function (data, onStartCallback) {
         animation: 'luxuryFadeIn 1.5s ease 0.5s forwards'
     });
 
-    // Name
+    // Name — supports multi-line input (\n in customize.html textarea).
+    // Each line is rendered in its own span so cursive layout is preserved.
     const name = document.createElement('h2');
+    name.className = 'hero-name';
     Object.assign(name.style, {
         fontSize: 'clamp(1.2rem, 3vw, 1.8rem)',
         fontFamily: 'var(--font-heading)',
@@ -119,20 +121,36 @@ window.Hero = function (data, onStartCallback) {
         marginBottom: '1rem',
         textShadow: '0 2px 20px rgba(0,0,0,0.8)',
         opacity: '0',
-        animation: 'luxuryFadeIn 1.5s ease 0.6s forwards'
+        animation: 'luxuryFadeIn 1.5s ease 0.6s forwards',
+        whiteSpace: 'pre-line',
+        lineHeight: '1.35'
     });
 
-    const nameHighlight = document.createElement('span');
-    nameHighlight.textContent = safe(hero.name);
-    Object.assign(nameHighlight.style, {
-        color: 'var(--color-primary)',
-        fontStyle: 'normal'
-    });
-    name.innerHTML = 'For ';
-    name.appendChild(nameHighlight);
+    const nameRaw = safe(hero.name);
+    if (/\n/.test(nameRaw)) {
+        // Multi-line: show verbatim so the author controls the wording
+        // (e.g. "To the,\nMy Friend").
+        const nameHighlight = document.createElement('span');
+        nameHighlight.textContent = nameRaw;
+        Object.assign(nameHighlight.style, {
+            color: 'var(--color-primary)',
+            fontStyle: 'normal'
+        });
+        name.appendChild(nameHighlight);
+    } else {
+        const nameHighlight = document.createElement('span');
+        nameHighlight.textContent = nameRaw;
+        Object.assign(nameHighlight.style, {
+            color: 'var(--color-primary)',
+            fontStyle: 'normal'
+        });
+        name.appendChild(document.createTextNode('For '));
+        name.appendChild(nameHighlight);
+    }
 
-    // Message
+    // Message — also supports multi-line authoring via newlines.
     const message = document.createElement('p');
+    message.className = 'hero-message';
     message.textContent = safe(hero.message);
     Object.assign(message.style, {
         maxWidth: '520px',
@@ -143,11 +161,16 @@ window.Hero = function (data, onStartCallback) {
         color: '#cfcfcf',
         textShadow: '0 2px 18px rgba(0,0,0,0.85)',
         opacity: '0',
-        animation: 'luxuryFadeIn 1.5s ease 0.8s forwards'
+        animation: 'luxuryFadeIn 1.5s ease 0.8s forwards',
+        whiteSpace: 'pre-line'
     });
 
-    // CTA Button - Elegant minimal
+    // CTA Button — lives in its own lower band so it sits just above the
+    // "Scroll" cue rather than being flush with the message copy. Blink
+    // loop (".hero-cta" in main.css) is only applied after the fade-in
+    // finishes so the first reveal doesn't feel jittery.
     const btn = document.createElement('button');
+    btn.className = 'hero-cta';
     btn.textContent = safe(hero.cta) || 'Discover Your Gift';
     Object.assign(btn.style, {
         padding: '1rem 3rem',
@@ -161,9 +184,15 @@ window.Hero = function (data, onStartCallback) {
         borderRadius: '0',
         border: '1px solid var(--color-primary)',
         cursor: 'pointer',
-        transition: 'all 0.4s ease',
+        transition: 'color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease',
         opacity: '0',
         animation: 'luxuryFadeIn 1.5s ease 1s forwards'
+    });
+    btn.addEventListener('animationend', function onReveal(e) {
+        if (e.animationName === 'luxuryFadeIn') {
+            btn.classList.add('is-blinking');
+            btn.removeEventListener('animationend', onReveal);
+        }
     });
 
     btn.onmouseenter = () => {
@@ -176,8 +205,27 @@ window.Hero = function (data, onStartCallback) {
     };
 
     btn.onclick = () => {
+        // Attempt to un-mute / play the background score on the first
+        // explicit user gesture — mobile + desktop browsers require
+        // interaction before audio with sound can start.
+        if (section._audio && typeof section._audio.unlock === 'function') {
+            section._audio.unlock();
+        }
         if (typeof onStartCallback === 'function') onStartCallback();
     };
+
+    // CTA is lifted out of the content flex column and pinned near the
+    // bottom of the hero, just above the scroll cue. This matches the
+    // user's request to move "Discover Your Gift" down.
+    const ctaBand = document.createElement('div');
+    Object.assign(ctaBand.style, {
+        position: 'absolute',
+        bottom: '120px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: '4'
+    });
+    ctaBand.appendChild(btn);
 
     // Scroll hint
     const scrollHint = document.createElement('div');
@@ -215,9 +263,24 @@ window.Hero = function (data, onStartCallback) {
     scrollHint.appendChild(scrollText);
     scrollHint.appendChild(scrollLine);
 
-    content.append(greeting, year, decorLine, name, message, btn);
+    content.append(greeting, year, decorLine, name, message);
     section.appendChild(content);
+    section.appendChild(ctaBand);
     section.appendChild(scrollHint);
+
+    // Background score (optional). Plays only while the hero is on-screen.
+    const audioUrl = safe(hero.audioUrl).trim();
+    if (audioUrl && typeof window.HeroAudio === 'function') {
+        const audio = window.HeroAudio({
+            src: audioUrl,
+            volume: typeof hero.audioVolume === 'number' ? hero.audioVolume : 0.55,
+            hero: section
+        });
+        if (audio) {
+            section._audio = audio;
+            section.appendChild(audio.toggleButton);
+        }
+    }
 
     // Add luxury animations
     addLuxuryAnimations();
