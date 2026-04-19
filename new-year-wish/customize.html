@@ -281,6 +281,45 @@
             font-size: 0.95rem;
         }
 
+        /* Audio URL row with inline preview button */
+        .audio-url-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .audio-url-row input[type="text"] {
+            flex: 1;
+        }
+        .audio-test-btn {
+            padding: 0 16px;
+            background: rgba(201, 169, 98, 0.12);
+            border: 1px solid rgba(201, 169, 98, 0.45);
+            color: var(--color-primary);
+            border-radius: var(--border-radius);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .audio-test-btn:hover {
+            background: rgba(201, 169, 98, 0.22);
+            border-color: var(--color-primary);
+        }
+        .audio-test-btn.is-playing {
+            background: rgba(201, 169, 98, 0.3);
+        }
+        .audio-status {
+            margin-top: 8px;
+            font-size: 0.82rem;
+            letter-spacing: 0.3px;
+            min-height: 1em;
+            color: var(--color-text-muted);
+        }
+        .audio-status.is-ok { color: #8fd18f; }
+        .audio-status.is-err { color: #e48a8a; }
+
         /* Buttons */
         .btn {
             padding: 10px 20px;
@@ -807,10 +846,14 @@
                         Background music URL (optional)
                         <span class="tooltip">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">MP3/OGG/WAV played on the first page and stopped on scroll. Use a relative path (e.g. assets/interstellar-theme.mp3) or a full https URL. Leave empty to disable music.</span>
+                            <span class="tooltip-text">MP3/OGG/WAV played on the first page and stopped on scroll. Use a relative path (e.g. assets/interstellar-theme.mp3) or a full https URL. Leave empty to disable music. Spaces are auto-encoded.</span>
                         </span>
                     </label>
-                    <input type="text" id="hero-audio-url" placeholder="assets/interstellar-theme.mp3">
+                    <div class="audio-url-row">
+                        <input type="text" id="hero-audio-url" placeholder="assets/interstellar-theme.mp3">
+                        <button type="button" id="hero-audio-test" class="audio-test-btn" title="Play a 3-second preview of this track">▶ Test</button>
+                    </div>
+                    <div id="hero-audio-status" class="audio-status" aria-live="polite"></div>
                 </div>
                 <div class="form-group">
                     <label>
@@ -1730,10 +1773,115 @@
             setTimeout(() => el.classList.remove('show'), 3000);
         }
 
+        // --- Audio URL preview & live status badge -------------------------
+        // Probes the user-entered URL so they can instantly see whether the
+        // file exists and hear a short preview, without round-tripping to
+        // index.html.
+        const audioProbe = (() => {
+            let previewEl = null;
+            function encode(src) { return src.replace(/ /g, '%20'); }
+            function setStatus(text, kind) {
+                const el = document.getElementById('hero-audio-status');
+                if (!el) return;
+                el.textContent = text;
+                el.classList.remove('is-ok', 'is-err');
+                if (kind) el.classList.add(kind);
+            }
+            function formatTime(sec) {
+                if (!isFinite(sec)) return '?';
+                const m = Math.floor(sec / 60);
+                const s = Math.floor(sec % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            }
+            function probe(rawUrl) {
+                const url = String(rawUrl || '').trim();
+                if (!url) {
+                    setStatus('No track — the hero will load silently.', null);
+                    return;
+                }
+                setStatus('Checking…', null);
+                const a = document.createElement('audio');
+                a.preload = 'metadata';
+                a.src = encode(url);
+                const ok = () => {
+                    setStatus(`Track loaded (${formatTime(a.duration)}).`, 'is-ok');
+                    a.remove();
+                };
+                const bad = () => {
+                    setStatus(`File not found at "${url}". Check the path + filename.`, 'is-err');
+                    a.remove();
+                };
+                a.addEventListener('loadedmetadata', ok, { once: true });
+                a.addEventListener('error', bad, { once: true });
+                // Safety timeout in case neither event fires.
+                setTimeout(() => {
+                    if (!a.duration) bad();
+                }, 8000);
+            }
+            function preview() {
+                const urlInput = document.getElementById('hero-audio-url');
+                const volInput = document.getElementById('hero-audio-volume');
+                const btn = document.getElementById('hero-audio-test');
+                const url = (urlInput.value || '').trim();
+                if (!url) { setStatus('Enter a URL first.', 'is-err'); return; }
+                if (previewEl) { previewEl.pause(); previewEl.remove(); previewEl = null; }
+                if (btn.classList.contains('is-playing')) {
+                    btn.classList.remove('is-playing');
+                    btn.textContent = '▶ Test';
+                    return;
+                }
+                const a = document.createElement('audio');
+                a.src = encode(url);
+                const volRaw = volInput.value;
+                const vol = (volRaw !== '' && !isNaN(Number(volRaw)))
+                    ? Math.max(0, Math.min(1, Number(volRaw))) : 0.55;
+                a.volume = vol;
+                previewEl = a;
+                btn.classList.add('is-playing');
+                btn.textContent = '■ Stop';
+                a.addEventListener('loadedmetadata', () => {
+                    setStatus(`Previewing (${formatTime(a.duration)}, volume ${vol.toFixed(2)})…`, 'is-ok');
+                }, { once: true });
+                a.addEventListener('error', () => {
+                    setStatus(`File not found at "${url}". Check the path + filename.`, 'is-err');
+                    btn.classList.remove('is-playing');
+                    btn.textContent = '▶ Test';
+                    previewEl = null;
+                }, { once: true });
+                a.play().then(() => {
+                    // auto-stop after 3s so the preview doesn't run forever
+                    setTimeout(() => {
+                        if (previewEl === a) {
+                            a.pause();
+                            a.remove();
+                            previewEl = null;
+                            btn.classList.remove('is-playing');
+                            btn.textContent = '▶ Test';
+                        }
+                    }, 3000);
+                }).catch(() => {
+                    setStatus('Browser blocked preview — try clicking the Test button again.', 'is-err');
+                    btn.classList.remove('is-playing');
+                    btn.textContent = '▶ Test';
+                    previewEl = null;
+                });
+            }
+            return { probe, preview };
+        })();
+
         // Add event listeners for auto-save on input changes
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
-            
+
+            // Probe whatever URL is already saved so the user sees status on open.
+            audioProbe.probe(document.getElementById('hero-audio-url').value);
+
+            // Wire the Test button + re-probe whenever the URL changes.
+            document.getElementById('hero-audio-test').addEventListener('click', audioProbe.preview);
+            document.getElementById('hero-audio-url').addEventListener('change', (e) => {
+                audioProbe.probe(e.target.value);
+            });
+
             // Auto-save on input changes
             [
                 'site-title', 'site-tagline', 'site-footer',

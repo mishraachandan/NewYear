@@ -19,8 +19,13 @@ window.HeroAudio = function (opts) {
     const src = String(opts.src || '').trim();
     if (!src) return null;
 
+    // URL-safe escaping for filenames containing spaces (very common when the
+    // file is renamed from "My Song.mp3"). Only replaces raw spaces so paths
+    // that already contain %20 are left alone.
+    const encodedSrc = src.replace(/ /g, '%20');
+
     const audio = document.createElement('audio');
-    audio.src = src;
+    audio.src = encodedSrc;
     audio.loop = true;
     audio.preload = 'auto';
     audio.muted = true; // required for autoplay on most browsers
