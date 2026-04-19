@@ -275,9 +275,16 @@ window.Hero = function (data, onStartCallback) {
 
     // Background score (optional). Plays only while the hero is on-screen.
     const audioUrl = safe(hero.audioUrl).trim();
+    // Fallback to the baked-in data.js default whenever the configured URL
+    // (typically merged in from localStorage) 404s — keeps the audio working
+    // after a filename change in data.js, even if the browser has a stale save.
+    const defaultAudioUrl = (typeof window.DATA === 'object' && window.DATA
+        && window.DATA.hero && typeof window.DATA.hero.audioUrl === 'string')
+        ? window.DATA.hero.audioUrl.trim() : '';
     if (audioUrl && typeof window.HeroAudio === 'function') {
         const audio = window.HeroAudio({
             src: audioUrl,
+            fallbackSrc: defaultAudioUrl,
             volume: typeof hero.audioVolume === 'number' ? hero.audioVolume : 0.55,
             hero: section
         });

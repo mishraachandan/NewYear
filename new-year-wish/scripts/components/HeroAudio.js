@@ -22,7 +22,13 @@ window.HeroAudio = function (opts) {
     // URL-safe escaping for filenames containing spaces (very common when the
     // file is renamed from "My Song.mp3"). Only replaces raw spaces so paths
     // that already contain %20 are left alone.
-    const encodedSrc = src.replace(/ /g, '%20');
+    const encode = (u) => String(u || '').replace(/ /g, '%20');
+    const encodedSrc = encode(src);
+
+    // Optional fallback URL used when the primary src errors (e.g. a stale
+    // localStorage value points at a file that has been renamed or removed
+    // in data.js). Only retried once, and only if it actually differs.
+    const fallbackSrc = encode(String(opts.fallbackSrc || '').trim());
 
     const audio = document.createElement('audio');
     audio.src = encodedSrc;
@@ -111,11 +117,19 @@ window.HeroAudio = function (opts) {
     audio.addEventListener('loadeddata', tryPlay, { once: true });
 
     // If the audio file can't be loaded (missing file, wrong URL, CORS),
-    // quietly hide the toggle instead of leaving a broken control on the
-    // hero. No console spam — the user may simply not have set an audioUrl.
+    // try the fallback src once (typically the data.js default, bypassing
+    // stale localStorage). If that also fails, quietly hide the toggle
+    // instead of leaving a broken control on the hero.
+    let fallbackTried = false;
     audio.addEventListener('error', () => {
+        if (!fallbackTried && fallbackSrc && fallbackSrc !== encodedSrc) {
+            fallbackTried = true;
+            audio.src = fallbackSrc;
+            audio.load();
+            return;
+        }
         toggleButton.style.display = 'none';
-    }, { once: true });
+    });
 
     function iconMuted() {
         return (
