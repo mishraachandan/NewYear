@@ -685,14 +685,57 @@
     <div class="container">
         <!-- Tabs Navigation -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('hero')">🎯 Hero</button>
+            <button class="tab-btn active" onclick="switchTab('site')">🏛️ Site</button>
+            <button class="tab-btn" onclick="switchTab('hero')">🎯 Hero</button>
             <button class="tab-btn" onclick="switchTab('gallery')">📸 Gallery</button>
+            <button class="tab-btn" onclick="switchTab('chronograph')">⌚ Chronograph</button>
             <button class="tab-btn" onclick="switchTab('notes')">💌 Notes</button>
             <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
         </div>
 
+        <!-- Site Tab (brand, nav, footer, chapter headings) -->
+        <div id="tab-site" class="tab-content active">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Brand &amp; Footer</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Site title (top-left brand)</label>
+                        <input type="text" id="site-title" placeholder="e.g. Maison 2026">
+                    </div>
+                    <div class="form-group">
+                        <label>Site tagline (unused in nav, available for future use)</label>
+                        <input type="text" id="site-tagline" placeholder="e.g. A New Year Wish">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Footer text</label>
+                    <input type="text" id="site-footer" placeholder="e.g. Crafted as a personal wish. — 2026">
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Navigation Links</h2>
+                </div>
+                <p style="color: var(--color-text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Each link jumps to one of the site's section anchors. Targets: <code>hero</code>, <code>gallery</code>, <code>chronograph</code>, <code>notes</code>.
+                </p>
+                <div id="nav-list"></div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Chapter Headings</h2>
+                </div>
+                <p style="color: var(--color-text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    The small marker (e.g. "Chapter I") and italic subtitle printed above each section.
+                </p>
+                <div id="chapter-list"></div>
+            </div>
+        </div>
+
         <!-- Hero Tab -->
-        <div id="tab-hero" class="tab-content active">
+        <div id="tab-hero" class="tab-content">
             <div class="section">
                 <div class="section-header">
                     <h2 class="section-title">Hero Section</h2>
@@ -748,6 +791,53 @@
                         </span>
                     </label>
                     <input type="text" id="hero-background-image" placeholder="e.g. assets/BlackHoleDisk_desktop.png">
+                </div>
+                <div class="form-group">
+                    <label>
+                        Call-to-action button label
+                        <span class="tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The text inside the hero button (e.g. "Discover Your Gift").</span>
+                        </span>
+                    </label>
+                    <input type="text" id="hero-cta" placeholder="e.g. Discover Your Gift">
+                </div>
+            </div>
+        </div>
+
+        <!-- Chronograph Tab -->
+        <div id="tab-chronograph" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Chronograph Dial</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Dial label (center of the watch)</label>
+                        <input type="text" id="chrono-dial-label" placeholder="e.g. 2026">
+                    </div>
+                    <div class="form-group">
+                        <label>Wind hint (under the dial)</label>
+                        <input type="text" id="chrono-wind-hint" placeholder="e.g. Wind the crown">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Completion message (shown once every wish is revealed)</label>
+                    <input type="text" id="chrono-complete" placeholder="e.g. All wishes unsealed. The year is yours.">
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Wishes</h2>
+                    <button class="btn btn-outline" onclick="addWish()">+ Add Wish</button>
+                </div>
+                <p style="color: var(--color-text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Each entry becomes one card in the chronograph grid. The numeral is shown in the corner; the title and body are revealed when the user winds the crown.
+                </p>
+                <div id="wish-list"></div>
+                <div id="wish-empty" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">⌚</div>
+                    <p>No wishes yet. Click "Add Wish" to begin.</p>
                 </div>
             </div>
         </div>
@@ -834,13 +924,31 @@
     <div class="auto-save-indicator" id="auto-save-indicator">Auto-saving...</div>
 
     <script>
-        // Default data structure
+        // Default data structure — mirrors scripts/data.js
         const defaultData = {
+            site: {
+                title: "Maison 2026",
+                tagline: "A New Year Wish",
+                footer: "Crafted as a personal wish. — 2026",
+                nav: [
+                    { label: "Prelude",     target: "hero" },
+                    { label: "Memories",    target: "gallery" },
+                    { label: "Chronograph", target: "chronograph" },
+                    { label: "Letters",     target: "notes" }
+                ]
+            },
+            chapters: {
+                hero:        { marker: "Prelude",     subtitle: "An overture for the year to come." },
+                gallery:     { marker: "Chapter I",   subtitle: "Moments, gently framed." },
+                chronograph: { marker: "Chapter II",  subtitle: "Wind the crown. Time unfolds with a wish." },
+                notes:       { marker: "Chapter III", subtitle: "A few words, sealed." }
+            },
             hero: {
                 greeting: "Happy New Year",
                 year: "2026",
                 name: "My Dearest Friend",
                 message: "Here's to another year of making memories together.",
+                cta: "Discover Your Gift",
                 backgroundImage: ""
             },
             galleryTitle: "Our Memories",
@@ -853,7 +961,20 @@
                     ]
                 }
             ],
-            notesTitle: "Special Notes for You",
+            chronograph: {
+                dialLabel: "2026",
+                windHint: "Wind the crown",
+                completeMessage: "All wishes unsealed. The year is yours.",
+                wishes: [
+                    { numeral: "I",   title: "A Weekend Away",       body: "A reserved page in next year's calendar — a trip, together." },
+                    { numeral: "II",  title: "A Candlelit Dinner",   body: "A night for cloth napkins and a long conversation." },
+                    { numeral: "III", title: "A Curated Playlist",   body: "A soundtrack for the year ahead, hand-picked with care." },
+                    { numeral: "IV",  title: "Front-Row Seats",      body: "Tickets to something you have been wanting to see." },
+                    { numeral: "V",   title: "A Handwritten Letter", body: "A real letter — the kind you keep in a drawer." },
+                    { numeral: "VI",  title: "An Open Wish",         body: "One favor, no expiry. Name it when you need it." }
+                ]
+            },
+            notesTitle: "Letters for You",
             notes: [
                 {
                     question: "What's our favorite hangout spot?",
@@ -869,17 +990,39 @@
 
         // Tab switching
         function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Show selected tab
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
-            event.target.classList.add('active');
+            if (typeof event !== 'undefined' && event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+
+        // Deep-ensure keys — called after load/import so old saves gain new fields.
+        function ensureShape(d) {
+            d.site = { ...defaultData.site, ...(d.site || {}) };
+            // Always map() when sourcing from defaults so we never hold a live
+            // reference to defaultData.* — otherwise addX()/removeX() edits
+            // would mutate defaults in-place and "Reset to Defaults" would
+            // serialize the already-corrupted objects.
+            d.site.nav = Array.isArray(d.site.nav) && d.site.nav.length
+                ? d.site.nav.map(x => ({ ...x }))
+                : defaultData.site.nav.map(x => ({ ...x }));
+            d.chapters = { ...defaultData.chapters, ...(d.chapters || {}) };
+            Object.keys(defaultData.chapters).forEach(k => {
+                d.chapters[k] = { ...defaultData.chapters[k], ...(d.chapters[k] || {}) };
+            });
+            d.hero = { ...defaultData.hero, ...(d.hero || {}) };
+            d.chronograph = { ...defaultData.chronograph, ...(d.chronograph || {}) };
+            d.chronograph.wishes = Array.isArray(d.chronograph.wishes) && d.chronograph.wishes.length
+                ? d.chronograph.wishes.map(w => ({ ...w }))
+                : defaultData.chronograph.wishes.map(w => ({ ...w }));
+            if (!d.galleryTitle) d.galleryTitle = defaultData.galleryTitle;
+            if (!d.notesTitle)   d.notesTitle   = defaultData.notesTitle;
+            if (!Array.isArray(d.gallery)) d.gallery = [];
+            d.gallery.forEach(m => { if (!Array.isArray(m.photos)) m.photos = []; });
+            if (!Array.isArray(d.notes)) d.notes = [];
+            return d;
         }
 
         // Load saved data or defaults
@@ -888,21 +1031,7 @@
             if (saved) {
                 try {
                     currentData = JSON.parse(saved);
-                    currentData.hero = { ...defaultData.hero, ...(currentData.hero && typeof currentData.hero === 'object' ? currentData.hero : {}) };
-                    // Ensure new fields exist in old saves
-                    if (!currentData.galleryTitle) currentData.galleryTitle = defaultData.galleryTitle;
-                    if (!currentData.notesTitle) currentData.notesTitle = defaultData.notesTitle;
-                    
-                    // Ensure gallery array exists and each memory has photos array
-                    if (!currentData.gallery) {
-                        currentData.gallery = [];
-                    } else {
-                        currentData.gallery.forEach(memory => {
-                            if (!memory.photos) {
-                                memory.photos = [];
-                            }
-                        });
-                    }
+                    ensureShape(currentData);
                 } catch (e) {
                     console.error('Failed to parse saved data', e);
                     currentData = JSON.parse(JSON.stringify(defaultData));
@@ -915,25 +1044,165 @@
 
         // Render all sections
         function renderAll() {
+            // Site
+            document.getElementById('site-title').value   = currentData.site.title   || '';
+            document.getElementById('site-tagline').value = currentData.site.tagline || '';
+            document.getElementById('site-footer').value  = currentData.site.footer  || '';
+            renderNavList();
+            renderChapterList();
+
             // Hero
             document.getElementById('hero-greeting').value = currentData.hero.greeting || '';
             document.getElementById('hero-year').value = currentData.hero.year || '';
             document.getElementById('hero-name').value = currentData.hero.name || '';
             document.getElementById('hero-message').value = currentData.hero.message || '';
+            document.getElementById('hero-cta').value = currentData.hero.cta || '';
             document.getElementById('hero-background-image').value =
                 currentData.hero.backgroundImage != null ? String(currentData.hero.backgroundImage) : '';
 
-            // Gallery Title
-            document.getElementById('gallery-section-title').value = currentData.galleryTitle || '';
+            // Chronograph
+            document.getElementById('chrono-dial-label').value = currentData.chronograph.dialLabel       || '';
+            document.getElementById('chrono-wind-hint').value  = currentData.chronograph.windHint        || '';
+            document.getElementById('chrono-complete').value   = currentData.chronograph.completeMessage || '';
+            renderWishes();
 
-            // Gallery List
+            // Gallery
+            document.getElementById('gallery-section-title').value = currentData.galleryTitle || '';
             renderMemories();
 
-            // Notes Title
+            // Notes
             document.getElementById('notes-section-title').value = currentData.notesTitle || '';
-
-            // Notes List
             renderNotes();
+        }
+
+        function renderNavList() {
+            const container = document.getElementById('nav-list');
+            container.innerHTML = '';
+            (currentData.site.nav || []).forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'memory-item';
+                row.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Label</label>
+                            <input type="text" value="${escapeHtml(item.label || '')}"
+                                   oninput="updateNav(${index}, 'label', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Target (section id)</label>
+                            <input type="text" value="${escapeHtml(item.target || '')}"
+                                   oninput="updateNav(${index}, 'target', this.value)"
+                                   placeholder="hero | gallery | chronograph | notes">
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeNav(${index})">🗑️ Remove</button>
+                `;
+                container.appendChild(row);
+            });
+            const add = document.createElement('button');
+            add.className = 'btn btn-outline';
+            add.textContent = '+ Add Nav Link';
+            add.style.marginTop = '0.5rem';
+            add.onclick = addNav;
+            container.appendChild(add);
+        }
+
+        function updateNav(index, field, value) {
+            if (!currentData.site.nav[index]) return;
+            currentData.site.nav[index][field] = value;
+            markUnsaved();
+        }
+        function addNav() {
+            currentData.site.nav.push({ label: 'New Link', target: 'hero' });
+            renderNavList();
+            markUnsaved();
+        }
+        function removeNav(index) {
+            currentData.site.nav.splice(index, 1);
+            renderNavList();
+            markUnsaved();
+        }
+
+        function renderChapterList() {
+            const container = document.getElementById('chapter-list');
+            container.innerHTML = '';
+            const order = ['hero', 'gallery', 'chronograph', 'notes'];
+            order.forEach(key => {
+                const c = currentData.chapters[key] || {};
+                const row = document.createElement('div');
+                row.className = 'memory-item';
+                row.innerHTML = `
+                    <h4 style="color: var(--color-primary); font-family: 'Playfair Display', serif; margin-bottom: 0.75rem; text-transform: capitalize;">${key}</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Marker (e.g. Chapter I)</label>
+                            <input type="text" value="${escapeHtml(c.marker || '')}"
+                                   oninput="updateChapter('${key}', 'marker', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Subtitle (italic tagline)</label>
+                            <input type="text" value="${escapeHtml(c.subtitle || '')}"
+                                   oninput="updateChapter('${key}', 'subtitle', this.value)">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+        function updateChapter(key, field, value) {
+            if (!currentData.chapters[key]) currentData.chapters[key] = {};
+            currentData.chapters[key][field] = value;
+            markUnsaved();
+        }
+
+        function renderWishes() {
+            const container = document.getElementById('wish-list');
+            const empty = document.getElementById('wish-empty');
+            const wishes = currentData.chronograph.wishes || [];
+            container.innerHTML = '';
+            if (!wishes.length) { empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            wishes.forEach((w, index) => {
+                const row = document.createElement('div');
+                row.className = 'memory-item';
+                row.innerHTML = `
+                    <div class="memory-header">
+                        <input type="text" class="memory-title-input"
+                               value="${escapeHtml(w.title || '')}"
+                               placeholder="Wish title"
+                               oninput="updateWish(${index}, 'title', this.value)">
+                        <button class="btn btn-danger btn-sm" onclick="removeWish(${index})">🗑️</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Numeral (I, II, III…)</label>
+                            <input type="text" value="${escapeHtml(w.numeral || '')}"
+                                   oninput="updateWish(${index}, 'numeral', this.value)">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Body</label>
+                        <textarea rows="2" oninput="updateWish(${index}, 'body', this.value)">${escapeHtml(w.body || '')}</textarea>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+        function updateWish(index, field, value) {
+            if (!currentData.chronograph.wishes[index]) return;
+            currentData.chronograph.wishes[index][field] = value;
+            markUnsaved();
+        }
+        function addWish() {
+            const n = currentData.chronograph.wishes.length + 1;
+            currentData.chronograph.wishes.push({ numeral: String(n), title: 'New Wish', body: '' });
+            renderWishes();
+            markUnsaved();
+        }
+        function removeWish(index) {
+            currentData.chronograph.wishes.splice(index, 1);
+            renderWishes();
+            markUnsaved();
         }
 
         // Render memories
@@ -1329,13 +1598,26 @@
 
         function autoSave() {
             if (!hasUnsavedChanges) return;
-            
-            // Collect all current values
+
+            // Site
+            currentData.site.title   = document.getElementById('site-title').value;
+            currentData.site.tagline = document.getElementById('site-tagline').value;
+            currentData.site.footer  = document.getElementById('site-footer').value;
+
+            // Hero
             currentData.hero.greeting = document.getElementById('hero-greeting').value;
             currentData.hero.year = document.getElementById('hero-year').value;
             currentData.hero.name = document.getElementById('hero-name').value;
             currentData.hero.message = document.getElementById('hero-message').value;
+            currentData.hero.cta = document.getElementById('hero-cta').value;
             currentData.hero.backgroundImage = document.getElementById('hero-background-image').value.trim();
+
+            // Chronograph dial labels
+            currentData.chronograph.dialLabel       = document.getElementById('chrono-dial-label').value;
+            currentData.chronograph.windHint        = document.getElementById('chrono-wind-hint').value;
+            currentData.chronograph.completeMessage = document.getElementById('chrono-complete').value;
+
+            // Gallery / Notes titles
             currentData.galleryTitle = document.getElementById('gallery-section-title').value;
             currentData.notesTitle = document.getElementById('notes-section-title').value;
 
@@ -1380,7 +1662,7 @@
                 reader.onload = function (e) {
                     try {
                         currentData = JSON.parse(e.target.result);
-                        currentData.hero = { ...defaultData.hero, ...(currentData.hero && typeof currentData.hero === 'object' ? currentData.hero : {}) };
+                        ensureShape(currentData);
                         localStorage.setItem('newYearWishData', JSON.stringify(currentData));
                         renderAll();
                         hasUnsavedChanges = false;
@@ -1420,7 +1702,12 @@
             loadData();
             
             // Auto-save on input changes
-            ['hero-greeting', 'hero-year', 'hero-name', 'hero-message', 'hero-background-image', 'gallery-section-title', 'notes-section-title'].forEach(id => {
+            [
+                'site-title', 'site-tagline', 'site-footer',
+                'hero-greeting', 'hero-year', 'hero-name', 'hero-message', 'hero-cta', 'hero-background-image',
+                'chrono-dial-label', 'chrono-wind-hint', 'chrono-complete',
+                'gallery-section-title', 'notes-section-title'
+            ].forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
                     element.addEventListener('input', markUnsaved);

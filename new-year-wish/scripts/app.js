@@ -6,7 +6,7 @@ class App {
         this.appElement = document.getElementById('app');
         this.loadingScreen = document.getElementById('loading-screen');
         this.state = {
-            currentView: 'hero' // hero, gallery, game, notes
+            currentView: 'hero' // hero, gallery, chronograph, notes
         };
 
         // Load customized data from localStorage or use defaults
@@ -20,64 +20,131 @@ class App {
     }
 
     loadCustomData() {
+        const defaults = (typeof DATA !== 'undefined' && DATA) || {};
         const saved = localStorage.getItem('newYearWishData');
-        if (saved) {
-            try {
-                const customData = JSON.parse(saved);
-                // Merge with defaults to ensure all fields exist
-                return {
-                    hero: { ...DATA.hero, ...customData.hero },
-                    gallery: customData.gallery || DATA.gallery,
-                    galleryTitle: customData.galleryTitle || 'Our Memories',
-                    game: DATA.game, // Game data stays default
-                    notes: customData.notes || DATA.notes,
-                    notesTitle: customData.notesTitle || 'Special Notes for You',
-                    gifts: DATA.gifts
-                };
-            } catch (e) {
-                console.warn('Failed to load custom data, using defaults');
-                return DATA;
-            }
+        if (!saved) return defaults;
+
+        try {
+            const c = JSON.parse(saved);
+            // Deep-merge with defaults so older saves still get new fields.
+            return {
+                site:        { ...(defaults.site || {}),        ...(c.site || {}) },
+                chapters:    { ...(defaults.chapters || {}),    ...(c.chapters || {}) },
+                hero:        { ...(defaults.hero || {}),        ...(c.hero || {}) },
+                galleryTitle: c.galleryTitle || defaults.galleryTitle || 'Our Memories',
+                gallery:      Array.isArray(c.gallery) ? c.gallery : (defaults.gallery || []),
+                chronograph: { ...(defaults.chronograph || {}), ...(c.chronograph || {}) },
+                notesTitle:   c.notesTitle || defaults.notesTitle || 'Letters for You',
+                notes:        Array.isArray(c.notes) ? c.notes : (defaults.notes || []),
+                gifts:        c.gifts || defaults.gifts,
+                game:         c.game  || defaults.game
+            };
+        } catch (e) {
+            console.warn('Failed to load custom data, using defaults');
+            return defaults;
         }
-        return DATA;
     }
 
     async init() {
-        // Simulate loading for effect
         setTimeout(() => {
-            this.loadingScreen.remove(); // Completely remove from DOM
+            this.loadingScreen.remove();
             this.render();
-        }, 1500);
+        }, 1200);
+    }
+
+    // Build the <header> chapter marker shown above every editorial section.
+    chapterHeader(meta, title) {
+        const header = document.createElement('header');
+        header.className = 'chapter-header';
+
+        const marker = document.createElement('div');
+        marker.className = 'chapter-marker';
+        marker.textContent = (meta && meta.marker) || '';
+        header.appendChild(marker);
+
+        const rule = document.createElement('div');
+        rule.className = 'chapter-rule';
+        header.appendChild(rule);
+
+        if (title) {
+            const h = document.createElement('h2');
+            h.className = 'chapter-title';
+            h.textContent = title;
+            header.appendChild(h);
+        }
+        if (meta && meta.subtitle) {
+            const sub = document.createElement('p');
+            sub.className = 'chapter-subtitle';
+            sub.textContent = meta.subtitle;
+            header.appendChild(sub);
+        }
+        return header;
+    }
+
+    // Wrap an existing section node with an anchored id + chapter header above it.
+    wrapChapter(anchorId, meta, title, bodyNode) {
+        const wrap = document.createElement('section');
+        wrap.id = anchorId;
+        wrap.className = 'chapter-wrap';
+        wrap.appendChild(this.chapterHeader(meta, title));
+        if (bodyNode) wrap.appendChild(bodyNode);
+
+        const rule = document.createElement('hr');
+        rule.className = 'editorial-rule';
+        wrap.appendChild(rule);
+        return wrap;
     }
 
     render() {
-        // Clear current content
         this.appElement.innerHTML = '';
 
+        // Slim top navigation (AP-inspired).
+        if (typeof window.Nav === 'function') {
+            const nav = window.Nav(this.data.site || {});
+            this.appElement.appendChild(nav);
+        }
 
-        const container = document.createElement('main');
-        container.className = 'container';
-
-        // Render Hero with custom data
+        // Hero
         const heroSection = Hero(this.data.hero, () => this.scrollToContent());
         this.appElement.appendChild(heroSection);
 
-        // Render Content Sections (Gallery, Game, Notes)
-        // These will be revealed after the hero interaction
+        // Editorial content sections
         this.contentWrapper = document.createElement('div');
         this.contentWrapper.id = 'main-content';
         this.contentWrapper.className = 'hidden animate-fade-in';
 
-        // Gallery with custom data
-        this.contentWrapper.appendChild(Gallery(this.data.gallery, this.data.galleryTitle));
+        const chapters = (this.data.chapters || {});
 
-        // Game (uses default data)
-        this.contentWrapper.appendChild(Game(this.data.game));
+        // Chapter I — Memories (Gallery)
+        const galleryNode = Gallery(this.data.gallery, this.data.galleryTitle);
+        this.contentWrapper.appendChild(
+            this.wrapChapter('gallery', chapters.gallery, this.data.galleryTitle, galleryNode)
+        );
 
-        // Notes with custom data
-        this.contentWrapper.appendChild(Notes(this.data.notes, this.data.notesTitle));
+        // Chapter II — Chronograph (replaces the old Memory Match game)
+        if (typeof window.Chronograph === 'function') {
+            const chronoNode = window.Chronograph(this.data.chronograph || {});
+            this.contentWrapper.appendChild(
+                this.wrapChapter('chronograph', chapters.chronograph, 'The Chronograph', chronoNode)
+            );
+        }
 
-        // Footer/Credits removed
+        // Chapter III — Letters (Notes)
+        const notesNode = Notes(this.data.notes, this.data.notesTitle);
+        this.contentWrapper.appendChild(
+            this.wrapChapter('notes', chapters.notes, this.data.notesTitle, notesNode)
+        );
+
+        // Site footer
+        const footer = document.createElement('footer');
+        footer.className = 'site-footer';
+        const footerRule = document.createElement('span');
+        footerRule.className = 'site-footer-rule';
+        footer.appendChild(footerRule);
+        const footerText = document.createElement('p');
+        footerText.textContent = (this.data.site && this.data.site.footer) || '';
+        footer.appendChild(footerText);
+        this.contentWrapper.appendChild(footer);
 
         this.appElement.appendChild(this.contentWrapper);
     }
@@ -85,20 +152,15 @@ class App {
     scrollToContent() {
         const content = document.getElementById('main-content');
 
-        // 1. Prepare reveals - set initial state
         const revealElements = document.querySelectorAll('.reveal-on-scroll');
         revealElements.forEach(el => el.classList.remove('revealed'));
 
-        // 2. Remove display:none
         content.classList.remove('hidden');
 
-        // 3. Small delay then fade in container and scroll
         setTimeout(() => {
             content.classList.add('content-visible');
             content.scrollIntoView({ behavior: 'smooth' });
 
-            // 4. Initialize observer AFTER the scroll landing is nearly finished
-            // This prevents the elements we land on from revealing immediately
             setTimeout(() => {
                 this.initGlobalScrollReveal();
             }, 1000);
@@ -107,28 +169,19 @@ class App {
 
     initGlobalScrollReveal() {
         const revealElements = document.querySelectorAll('.reveal-on-scroll:not(.revealed)');
-
-        const observerOptions = {
-            threshold: 0.15,
-            rootMargin: '0px 0px -100px 0px'
-        };
-
+        const observerOptions = { threshold: 0.15, rootMargin: '0px 0px -100px 0px' };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    // Dramatic reveal with staggered timing handled by CSS transitionDelay
                     entry.target.classList.add('revealed');
                     observer.unobserve(entry.target);
                 }
             });
         }, observerOptions);
-
         revealElements.forEach(el => observer.observe(el));
     }
 }
 
-
-// Initialize App
 document.addEventListener('DOMContentLoaded', () => {
     new App();
-});  
+});

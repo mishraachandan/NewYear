@@ -1,12 +1,36 @@
+/**
+ * data.js - Single source of truth for every piece of copy and content on the site.
+ * Every field here is editable from customize.html and persisted in localStorage
+ * under the key "newYearWishData".
+ */
 window.DATA = {
+    site: {
+        title: "Maison 2026",
+        tagline: "A New Year Wish",
+        nav: [
+            { label: "Prelude",     target: "hero" },
+            { label: "Memories",    target: "gallery" },
+            { label: "Chronograph", target: "chronograph" },
+            { label: "Letters",     target: "notes" }
+        ],
+        footer: "Crafted as a personal wish. — 2026"
+    },
+    chapters: {
+        hero:        { marker: "Prelude",      subtitle: "An overture for the year to come." },
+        gallery:     { marker: "Chapter I",    subtitle: "Moments, gently framed." },
+        chronograph: { marker: "Chapter II",   subtitle: "Wind the crown. Time unfolds with a wish." },
+        notes:       { marker: "Chapter III",  subtitle: "A few words, sealed." }
+    },
     hero: {
         greeting: "Happy New Year",
         year: "2026",
-        name: "My Dearest Friend", // Customizable name
+        name: "My Dearest Friend",
         message: "Here's to another year of making memories together.",
+        cta: "Discover Your Gift",
         backgroundImage: ""
     },
-    // Gallery now has memory sections, each with multiple photos
+    // Gallery has memory sections, each with multiple photos.
+    galleryTitle: "Our Memories",
     gallery: [
         {
             id: 1,
@@ -45,59 +69,54 @@ window.DATA = {
             ]
         }
     ],
-    game: {
-        maxMoves: 25,
-        winMessage: "You unlocked the surprise!",
-        memoryCards: ["🎉", "🎁", "🎊", "🎈", "⭐", "💝"], // 6 pairs = 12 cards total
-        giftTiers: [
-            {
-                minPairs: 6, gifts: [
-                    { name: "Weekend Getaway 🚗", weight: 40 },
-                    { name: "Fancy Dinner 🍽️", weight: 35 },
-                    { name: "Concert Tickets 🎵", weight: 25 }
-                ]
-            },
-            {
-                minPairs: 4, gifts: [
-                    { name: "Dinner Date Coupon 🍽️", weight: 50 },
-                    { name: "Movie Night Package 🎬", weight: 30 },
-                    { name: "Custom Playlist 🎵", weight: 20 }
-                ]
-            },
-            {
-                minPairs: 2, gifts: [
-                    { name: "Coffee Gift Card ☕", weight: 50 },
-                    { name: "Sweet Treats Box 🍫", weight: 30 },
-                    { name: "Handwritten Letter 💌", weight: 20 }
-                ]
-            },
-            {
-                minPairs: 0, gifts: [
-                    { name: "Better Luck Message 💭", weight: 100 }
-                ]
-            }
+    // NEW: Chronograph wishes - replaces the old memory-match game.
+    // The user winds an elegant watch dial; the hand lands on a numeral
+    // and reveals the matching wish card. Every numeral can eventually
+    // be unlocked across multiple winds.
+    chronograph: {
+        dialLabel: "2026",
+        windHint: "Wind the crown",
+        completeMessage: "All wishes unsealed. The year is yours.",
+        wishes: [
+            { numeral: "I",   title: "A Weekend Away",      body: "A reserved page in next year's calendar — a trip, together." },
+            { numeral: "II",  title: "A Candlelit Dinner",  body: "A night for cloth napkins and a long conversation." },
+            { numeral: "III", title: "A Curated Playlist",  body: "A soundtrack for the year ahead, hand-picked with care." },
+            { numeral: "IV",  title: "Front-Row Seats",     body: "Tickets to something you have been wanting to see." },
+            { numeral: "V",   title: "A Handwritten Letter",body: "A real letter — the kind you keep in a drawer." },
+            { numeral: "VI",  title: "An Open Wish",        body: "One favor, no expiry. Name it when you need it." }
         ]
     },
+    notesTitle: "Letters for You",
     notes: [
         {
             question: "What's our favorite hangout spot?",
             answer: "cafe",
-            message: "May this year bring you as much joy as you bring to everyone around you. ☕❤️"
+            message: "May this year bring you as much joy as you bring to everyone around you."
         },
         {
             question: "What month did we first meet?",
             answer: "january",
-            message: "Remember that trip we took? Let's do it again this year! 🚗✨"
+            message: "Remember that trip we took? Let's do it again this year."
         },
         {
             question: "What's my nickname for you?",
             answer: "bestie",
-            message: "Wishing you health, wealth, and endless happiness. You deserve it all! 💫🎉"
+            message: "Wishing you health, wealth, and endless happiness. You deserve it all."
         }
     ],
+    // Legacy field kept for backward-compat with any older customize exports.
     gifts: [
-        { name: "A Custom Playlist 🎵", weight: 50 },
-        { name: "Dinner Date Coupon 🍽️", weight: 30 },
-        { name: "Weekend Getaway 🚗", weight: 20 }
-    ]
+        { name: "A Custom Playlist", weight: 50 },
+        { name: "Dinner Date Coupon", weight: 30 },
+        { name: "Weekend Getaway", weight: 20 }
+    ],
+    // Legacy game block kept so very old saves still load without errors.
+    game: {
+        maxMoves: 25,
+        winMessage: "You unlocked the surprise!",
+        memoryCards: ["\u2728", "\u2728", "\u2728", "\u2728", "\u2728", "\u2728"],
+        giftTiers: [
+            { minPairs: 0, gifts: [{ name: "Better Luck Next Time", weight: 100 }] }
+        ]
+    }
 };
