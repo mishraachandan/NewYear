@@ -27,7 +27,12 @@ window.DATA = {
         name: "My Dearest Friend",
         message: "Here's to another year of making memories together.",
         cta: "Discover Your Gift",
-        backgroundImage: ""
+        backgroundImage: "",
+        // Path (relative to index.html) or full URL to a background track
+        // played while the hero is on screen. Leave empty to disable music.
+        // Example: "assets/interstellar-theme.mp3".
+        audioUrl: "",
+        audioVolume: 0.55
     },
     // Gallery has memory sections, each with multiple photos.
     galleryTitle: "Our Memories",

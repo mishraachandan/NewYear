@@ -770,7 +770,7 @@
                             <span class="tooltip-text">The name of the person receiving this wish</span>
                         </span>
                     </label>
-                    <input type="text" id="hero-name" placeholder="e.g., My Dearest Friend">
+                    <textarea id="hero-name" rows="2" placeholder="e.g., My Dearest Friend&#10;(press Enter for a new line)"></textarea>
                 </div>
                 <div class="form-group">
                     <label>
@@ -801,6 +801,26 @@
                         </span>
                     </label>
                     <input type="text" id="hero-cta" placeholder="e.g. Discover Your Gift">
+                </div>
+                <div class="form-group">
+                    <label>
+                        Background music URL (optional)
+                        <span class="tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">MP3/OGG/WAV played on the first page and stopped on scroll. Use a relative path (e.g. assets/interstellar-theme.mp3) or a full https URL. Leave empty to disable music.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="hero-audio-url" placeholder="assets/interstellar-theme.mp3">
+                </div>
+                <div class="form-group">
+                    <label>
+                        Background music volume (0 – 1)
+                        <span class="tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Audio volume when the track is un-muted.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="hero-audio-volume" min="0" max="1" step="0.05" placeholder="0.55">
                 </div>
             </div>
         </div>
@@ -949,7 +969,9 @@
                 name: "My Dearest Friend",
                 message: "Here's to another year of making memories together.",
                 cta: "Discover Your Gift",
-                backgroundImage: ""
+                backgroundImage: "",
+                audioUrl: "",
+                audioVolume: 0.55
             },
             galleryTitle: "Our Memories",
             gallery: [
@@ -1059,6 +1081,10 @@
             document.getElementById('hero-cta').value = currentData.hero.cta || '';
             document.getElementById('hero-background-image').value =
                 currentData.hero.backgroundImage != null ? String(currentData.hero.backgroundImage) : '';
+            document.getElementById('hero-audio-url').value =
+                currentData.hero.audioUrl != null ? String(currentData.hero.audioUrl) : '';
+            document.getElementById('hero-audio-volume').value =
+                currentData.hero.audioVolume != null ? String(currentData.hero.audioVolume) : '';
 
             // Chronograph
             document.getElementById('chrono-dial-label').value = currentData.chronograph.dialLabel       || '';
@@ -1611,6 +1637,13 @@
             currentData.hero.message = document.getElementById('hero-message').value;
             currentData.hero.cta = document.getElementById('hero-cta').value;
             currentData.hero.backgroundImage = document.getElementById('hero-background-image').value.trim();
+            currentData.hero.audioUrl = document.getElementById('hero-audio-url').value.trim();
+            const audioVolumeRaw = document.getElementById('hero-audio-volume').value;
+            // Use an explicit isNaN check so a volume of 0 (mute) is honoured
+            // — `Number(x) || 0.55` would silently snap 0 back to 0.55.
+            currentData.hero.audioVolume = (audioVolumeRaw !== '' && !isNaN(Number(audioVolumeRaw)))
+                ? Math.max(0, Math.min(1, Number(audioVolumeRaw)))
+                : 0.55;
 
             // Chronograph dial labels
             currentData.chronograph.dialLabel       = document.getElementById('chrono-dial-label').value;
@@ -1705,6 +1738,7 @@
             [
                 'site-title', 'site-tagline', 'site-footer',
                 'hero-greeting', 'hero-year', 'hero-name', 'hero-message', 'hero-cta', 'hero-background-image',
+                'hero-audio-url', 'hero-audio-volume',
                 'chrono-dial-label', 'chrono-wind-hint', 'chrono-complete',
                 'gallery-section-title', 'notes-section-title'
             ].forEach(id => {
