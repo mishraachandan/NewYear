@@ -14,6 +14,7 @@ window.Hero = function (data, onStartCallback) {
 
     const section = document.createElement('section');
     section.className = 'hero-section';
+    section.id = 'hero';
     Object.assign(section.style, {
         height: '100vh',
         display: 'flex',
@@ -29,24 +30,19 @@ window.Hero = function (data, onStartCallback) {
     });
 
     // Cinematic animated black hole background (Interstellar-inspired).
-    // Rendered live via WebGL behind all hero content.
-    if (typeof window.BlackHole === 'function') {
+    // Rendered live via WebGL behind all hero content. Skipped when a user
+    // supplies a custom backgroundImage via Customize (their choice wins).
+    if (!bgUrl && typeof window.BlackHole === 'function') {
         const bh = window.BlackHole();
         if (bh && bh.element) {
             section.appendChild(bh.element);
             section._blackHole = bh;
         }
-    }
 
-    // Soft veil on top of the black hole to keep hero text readable.
-    const bhVeil = document.createElement('div');
-    bhVeil.className = 'hero-bh-veil';
-    section.appendChild(bhVeil);
-
-    // If the user has also supplied a custom backgroundImage via Customize,
-    // keep rendering it above the black hole (lightly veiled) so their choice
-    // still wins, but fall back to the black hole scene by default.
-    if (bgUrl) {
+        const bhVeil = document.createElement('div');
+        bhVeil.className = 'hero-bh-veil';
+        section.appendChild(bhVeil);
+    } else if (bgUrl) {
         const bgLayer = document.createElement('div');
         bgLayer.className = 'hero-bg';
         bgLayer.style.backgroundImage = `url(${JSON.stringify(bgUrl)})`;
@@ -155,7 +151,7 @@ window.Hero = function (data, onStartCallback) {
 
     // CTA Button - Elegant minimal
     const btn = document.createElement('button');
-    btn.textContent = 'Discover Your Gift';
+    btn.textContent = safe(hero.cta) || 'Discover Your Gift';
     Object.assign(btn.style, {
         padding: '1rem 3rem',
         fontSize: '0.85rem',
