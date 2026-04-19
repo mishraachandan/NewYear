@@ -286,6 +286,7 @@ window.Hero = function (data, onStartCallback) {
             src: audioUrl,
             fallbackSrc: defaultAudioUrl,
             volume: typeof hero.audioVolume === 'number' ? hero.audioVolume : 0.55,
+            pauseWhenHidden: false,
             hero: section
         });
         if (audio) {

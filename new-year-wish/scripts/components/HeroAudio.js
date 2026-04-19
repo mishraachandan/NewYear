@@ -1,16 +1,16 @@
 /**
  * HeroAudio.js
  *
- * Attaches a looping background track to the hero section. The track
- * plays only while the hero is intersecting the viewport; as soon as
- * the visitor scrolls the hero out, the audio pauses and resumes when
- * they scroll back. Browsers block unmuted autoplay, so the audio
- * starts muted and a small sound toggle (bottom-right of the hero)
- * lets the visitor un-mute; clicking the CTA also un-mutes.
+ * Attaches a looping background track to the hero section. Browsers
+ * block unmuted autoplay, so the audio starts muted and a small sound
+ * toggle (bottom-right of the hero) lets the visitor un-mute; clicking
+ * the CTA also un-mutes. The caller can optionally pause playback when
+ * the hero leaves the viewport.
  *
  * Usage:
  *     const audio = window.HeroAudio({ src: 'assets/theme.mp3',
  *                                      volume: 0.55,
+ *                                      pauseWhenHidden: false,
  *                                      hero: sectionElement });
  *     section.appendChild(audio.toggleButton);
  */
@@ -24,6 +24,19 @@ window.HeroAudio = function (opts) {
     // that already contain %20 are left alone.
     const encode = (u) => String(u || '').replace(/ /g, '%20');
     const encodedSrc = encode(src);
+    const resolveUrl = (u) => {
+        try {
+            return new URL(u, window.location.href);
+        } catch (_) {
+            return null;
+        }
+    };
+    const primaryUrl = resolveUrl(encodedSrc);
+    const shouldProbeWithFetch = !!(
+        primaryUrl &&
+        /^https?:$/.test(primaryUrl.protocol) &&
+        typeof window.fetch === 'function'
+    );
 
     // Optional fallback URL used when the primary src errors (e.g. a stale
     // localStorage value points at a file that has been renamed or removed
@@ -40,7 +53,9 @@ window.HeroAudio = function (opts) {
         ? Number(opts.volume)
         : 0.55;
     audio.volume = Math.max(0, Math.min(1, requestedVol));
-    audio.crossOrigin = 'anonymous';
+    if (primaryUrl && /^https?:$/.test(primaryUrl.protocol) && primaryUrl.origin !== window.location.origin) {
+        audio.crossOrigin = 'anonymous';
+    }
     audio.className = 'hero-audio-el';
 
     // Toggle button — shows the current mute state.
@@ -53,6 +68,7 @@ window.HeroAudio = function (opts) {
     let userPaused = false;
     let heroVisible = true;
     let unlocked = false;
+    const pauseWhenHidden = opts.pauseWhenHidden === true;
 
     function updateIcon() {
         toggleButton.classList.toggle('is-muted', audio.muted);
@@ -60,7 +76,7 @@ window.HeroAudio = function (opts) {
     }
 
     function tryPlay() {
-        if (userPaused || !heroVisible) return;
+        if (userPaused || (pauseWhenHidden && !heroVisible)) return;
         const p = audio.play();
         if (p && typeof p.catch === 'function') {
             p.catch(() => {/* autoplay blocked; wait for gesture */});
@@ -94,8 +110,15 @@ window.HeroAudio = function (opts) {
         updateIcon();
     });
 
-    // Pause / resume as the hero enters / leaves the viewport.
-    if (opts.hero && 'IntersectionObserver' in window) {
+    function handleFirstGesture() {
+        if (!unlocked && !userPaused) unlock();
+    }
+
+    document.addEventListener('pointerdown', handleFirstGesture, { once: true, passive: true });
+    document.addEventListener('keydown', handleFirstGesture, { once: true });
+
+    // Pause / resume as the hero enters / leaves the viewport when requested.
+    if (pauseWhenHidden && opts.hero && 'IntersectionObserver' in window) {
         const io = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 heroVisible = entry.isIntersecting && entry.intersectionRatio > 0.15;
@@ -142,23 +165,27 @@ window.HeroAudio = function (opts) {
     }
 
     let fallbackUsed = false;
-    // (1) HEAD-probe the primary URL. Abort after 3s so a slow server
-    //     doesn't block audio startup.
-    (function probePrimary() {
-        const ac = ('AbortController' in window) ? new AbortController() : null;
-        const timer = setTimeout(() => ac && ac.abort(), 3000);
-        const finalize = (ok) => {
-            clearTimeout(timer);
-            if (ok) {
-                setSrcAndLoad(encodedSrc);
-            } else if (!tryFallback()) {
-                giveUp();
-            }
-        };
-        fetch(encodedSrc, { method: 'HEAD', signal: ac && ac.signal })
-            .then((r) => finalize(r.ok))
-            .catch(() => finalize(false));
-    })();
+    // (1) HEAD-probe only for HTTP(S) URLs. `file://` pages and some static
+    // hosts reject fetch probes even though the <audio> tag can load the file.
+    if (shouldProbeWithFetch) {
+        (function probePrimary() {
+            const ac = ('AbortController' in window) ? new AbortController() : null;
+            const timer = setTimeout(() => ac && ac.abort(), 3000);
+            const finalize = (ok) => {
+                clearTimeout(timer);
+                if (ok) {
+                    setSrcAndLoad(encodedSrc);
+                } else if (!tryFallback()) {
+                    giveUp();
+                }
+            };
+            fetch(encodedSrc, { method: 'HEAD', signal: ac && ac.signal })
+                .then((r) => finalize(r.ok))
+                .catch(() => finalize(false));
+        })();
+    } else {
+        setSrcAndLoad(encodedSrc);
+    }
 
     // (2) Stall backstop: if nothing loaded within 6s, try fallback.
     const stallTimer = setTimeout(() => {
