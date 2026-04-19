@@ -30,8 +30,9 @@ window.DATA = {
         backgroundImage: "",
         // Path (relative to index.html) or full URL to a background track
         // played while the hero is on screen. Leave empty to disable music.
-        // Example: "assets/interstellar-theme.mp3".
-        audioUrl: "",
+        // Default: Hans Zimmer's "Day One" from the Interstellar soundtrack,
+        // bundled at assets/interstellar-day-one.mp3.
+        audioUrl: "assets/interstellar-day-one.mp3",
         audioVolume: 0.55
     },
     // Gallery has memory sections, each with multiple photos.
