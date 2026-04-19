@@ -1,0 +1,210 @@
+:root {
+    /* Color Palette: Luxury Dark (Audemars Piguet inspired) */
+    --color-bg: #0c0c0c;
+    /* Rich black */
+    --color-surface: #1a1a1a;
+    /* Dark charcoal */
+    --color-primary: #c9a962;
+    /* Warm Gold */
+    --color-primary-dim: #a08642;
+    --color-secondary: #8b7355;
+    /* Bronze */
+    --color-accent: #d4af37;
+    /* Metallic Gold */
+    --color-gold: #c9a962;
+    --color-text-main: #f5f5f5;
+    /* Off-white for elegance */
+    --color-text-muted: #888888;
+
+    /* Gradient Colors */
+    --gradient-primary: linear-gradient(135deg, #c9a962 0%, #8b6914 50%, #c9a962 100%);
+    --gradient-gold: linear-gradient(135deg, #d4af37 0%, #c9a962 50%, #8b6914 100%);
+    --gradient-dark: linear-gradient(180deg, #0c0c0c 0%, #1a1a1a 100%);
+
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 2rem;
+    --spacing-lg: 4rem;
+    --spacing-xl: 8rem;
+
+    /* Typography - Elegant serif */
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', 'Helvetica Neue', sans-serif;
+
+    /* Borders */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: transparent;
+    color: var(--color-text-main);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+#app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Optional hero background from Customize (hero.backgroundImage) */
+.hero-section .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+
+.hero-section .hero-bg-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+        to bottom,
+        rgba(12, 12, 12, 0.55) 0%,
+        rgba(12, 12, 12, 0.28) 45%,
+        rgba(12, 12, 12, 0.52) 100%
+    );
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md) 0;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-heading);
+    color: var(--color-primary);
+    line-height: 1.2;
+}
+
+button {
+    cursor: pointer;
+    font-family: var(--font-body);
+    border: none;
+    outline: none;
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--color-surface);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    margin-top: var(--spacing-sm);
+    color: var(--color-primary);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Luxury Scroll Reveal - Cinematic Materialization */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(100px) scale(0.9) rotateX(10deg);
+    filter: blur(10px);
+    transition:
+        opacity 1.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+        filter 1.2s ease-out;
+    will-change: transform, opacity, filter;
+    pointer-events: none;
+}
+
+.reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0);
+    filter: blur(0);
+    pointer-events: auto;
+}
+
+/* Base hidden state for the main content wrapper */
+#main-content {
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+}
+
+#main-content.content-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: var(--spacing-sm) 0;
+    }
+
+    h1 {
+        font-size: 15vw !important;
+    }
+
+    /* Responsive Hero Text */
+    h2 {
+        font-size: 2rem !important;
+    }
+
+    h3 {
+        font-size: 1.5rem !important;
+    }
+
+    .hero-section p {
+        font-size: 1rem !important;
+        padding: 0 1rem;
+    }
+
+    .gallery-section {
+        padding: 2rem 0.5rem !important;
+    }
+
+    .game-section {
+        padding: 2rem 0.5rem !important;
+    }
+}
