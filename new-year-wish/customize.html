@@ -852,6 +852,7 @@
                     <div class="audio-url-row">
                         <input type="text" id="hero-audio-url" placeholder="assets/interstellar-theme.mp3">
                         <button type="button" id="hero-audio-test" class="audio-test-btn" title="Play a 3-second preview of this track">▶ Test</button>
+                        <button type="button" id="hero-audio-use-default" class="audio-test-btn" title="Reset this field to the track currently bundled in data.js (clears any stale saved value)">Use bundled default</button>
                     </div>
                     <div id="hero-audio-status" class="audio-status" aria-live="polite"></div>
                 </div>
@@ -986,8 +987,13 @@
     <div class="success-message" id="success-msg">Changes saved successfully!</div>
     <div class="auto-save-indicator" id="auto-save-indicator">Auto-saving...</div>
 
+    <!-- Pull in the shared data.js so we can read the bundled defaults
+         (used by the "Use bundled default" button + fallback logic). -->
+    <script src="scripts/data.js"></script>
     <script>
-        // Default data structure — mirrors scripts/data.js
+        // Default data structure — mirrors scripts/data.js. Kept in sync with
+        // window.DATA below; the literal copy is retained so customize.html
+        // still renders if data.js fails to load.
         const defaultData = {
             site: {
                 title: "Maison 2026",
@@ -1013,8 +1019,8 @@
                 message: "Here's to another year of making memories together.",
                 cta: "Discover Your Gift",
                 backgroundImage: "",
-                audioUrl: "assets/interstellar-day-one.mp3",
-                audioVolume: 0.55
+                audioUrl: "assets/Intersteller Music.mp3",
+                audioVolume: 1.0
             },
             galleryTitle: "Our Memories",
             gallery: [
@@ -1881,6 +1887,25 @@
             document.getElementById('hero-audio-url').addEventListener('change', (e) => {
                 audioProbe.probe(e.target.value);
             });
+
+            // "Use bundled default" overwrites any stale saved URL with the
+            // path baked into data.js. This is the one-click fix for the case
+            // where the user renamed the bundled file on disk but the browser
+            // is still serving an older audioUrl from localStorage.
+            const useDefaultBtn = document.getElementById('hero-audio-use-default');
+            if (useDefaultBtn) {
+                useDefaultBtn.addEventListener('click', () => {
+                    const urlInput = document.getElementById('hero-audio-url');
+                    const volInput = document.getElementById('hero-audio-volume');
+                    const bundled = (window.DATA && window.DATA.hero) || defaultData.hero;
+                    urlInput.value = bundled.audioUrl || '';
+                    if (bundled.audioVolume != null) volInput.value = bundled.audioVolume;
+                    currentData.hero.audioUrl = urlInput.value;
+                    currentData.hero.audioVolume = Number(volInput.value) || defaultData.hero.audioVolume;
+                    audioProbe.probe(urlInput.value);
+                    saveData();
+                });
+            }
 
             // Auto-save on input changes
             [
