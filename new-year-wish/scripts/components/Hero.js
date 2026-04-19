@@ -28,6 +28,24 @@ window.Hero = function (data, onStartCallback) {
         isolation: 'isolate'
     });
 
+    // Cinematic animated black hole background (Interstellar-inspired).
+    // Rendered live via WebGL behind all hero content.
+    if (typeof window.BlackHole === 'function') {
+        const bh = window.BlackHole();
+        if (bh && bh.element) {
+            section.appendChild(bh.element);
+            section._blackHole = bh;
+        }
+    }
+
+    // Soft veil on top of the black hole to keep hero text readable.
+    const bhVeil = document.createElement('div');
+    bhVeil.className = 'hero-bh-veil';
+    section.appendChild(bhVeil);
+
+    // If the user has also supplied a custom backgroundImage via Customize,
+    // keep rendering it above the black hole (lightly veiled) so their choice
+    // still wins, but fall back to the black hole scene by default.
     if (bgUrl) {
         const bgLayer = document.createElement('div');
         bgLayer.className = 'hero-bg';
