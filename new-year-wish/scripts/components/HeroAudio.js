@@ -31,7 +31,6 @@ window.HeroAudio = function (opts) {
     const fallbackSrc = encode(String(opts.fallbackSrc || '').trim());
 
     const audio = document.createElement('audio');
-    audio.src = encodedSrc;
     audio.loop = true;
     audio.preload = 'auto';
     audio.muted = true; // required for autoplay on most browsers
@@ -116,19 +115,62 @@ window.HeroAudio = function (opts) {
     // Kick off a muted autoplay attempt on load.
     audio.addEventListener('loadeddata', tryPlay, { once: true });
 
-    // If the audio file can't be loaded (missing file, wrong URL, CORS),
-    // try the fallback src once (typically the data.js default, bypassing
-    // stale localStorage). If that also fails, quietly hide the toggle
-    // instead of leaving a broken control on the hero.
-    let fallbackTried = false;
-    audio.addEventListener('error', () => {
-        if (!fallbackTried && fallbackSrc && fallbackSrc !== encodedSrc) {
-            fallbackTried = true;
-            audio.src = fallbackSrc;
-            audio.load();
-            return;
-        }
+    // --- Broken-URL detection ------------------------------------------------
+    // Chromium's <audio> element does NOT fire the `error` event on plain
+    // HTTP 404 — the element just stalls forever in NETWORK_LOADING. So we
+    // can't rely on `error` alone to swap in the fallback. We run three
+    // checks in order:
+    //   1. Proactive fetch(HEAD)  — fires immediately for 404/DNS failures.
+    //   2. Stall timeout          — backstop for flaky servers that return
+    //                               200 but never deliver audio bytes.
+    //   3. Native `error` event   — covers codec + CORS failures.
+    function setSrcAndLoad(url) {
+        audio.src = url;
+        audio.load();
+    }
+
+    function tryFallback() {
+        if (fallbackUsed) return false;
+        if (!fallbackSrc || fallbackSrc === encodedSrc) return false;
+        fallbackUsed = true;
+        setSrcAndLoad(fallbackSrc);
+        return true;
+    }
+
+    function giveUp() {
         toggleButton.style.display = 'none';
+    }
+
+    let fallbackUsed = false;
+    // (1) HEAD-probe the primary URL. Abort after 3s so a slow server
+    //     doesn't block audio startup.
+    (function probePrimary() {
+        const ac = ('AbortController' in window) ? new AbortController() : null;
+        const timer = setTimeout(() => ac && ac.abort(), 3000);
+        const finalize = (ok) => {
+            clearTimeout(timer);
+            if (ok) {
+                setSrcAndLoad(encodedSrc);
+            } else if (!tryFallback()) {
+                giveUp();
+            }
+        };
+        fetch(encodedSrc, { method: 'HEAD', signal: ac && ac.signal })
+            .then((r) => finalize(r.ok))
+            .catch(() => finalize(false));
+    })();
+
+    // (2) Stall backstop: if nothing loaded within 6s, try fallback.
+    const stallTimer = setTimeout(() => {
+        if (audio.readyState < 2) {
+            if (!tryFallback()) giveUp();
+        }
+    }, 6000);
+    audio.addEventListener('loadeddata', () => clearTimeout(stallTimer), { once: true });
+
+    // (3) Native error handler — codec / CORS failures.
+    audio.addEventListener('error', () => {
+        if (!tryFallback()) giveUp();
     });
 
     function iconMuted() {
