@@ -83,6 +83,10 @@ window.DATA = {
         dialLabel: "2026",
         windHint: "Wind the crown",
         completeMessage: "All wishes unsealed. The year is yours.",
+        // Total number of winds the user may perform before the dial locks.
+        // Each wind reveals one wish via the full-screen transition, then
+        // returns to the clock. If 0 / missing, falls back to wishes.length.
+        maxSpins: 6,
         wishes: [
             { numeral: "I",   title: "A Weekend Away",      body: "A reserved page in next year's calendar — a trip, together." },
             { numeral: "II",  title: "A Candlelit Dinner",  body: "A night for cloth napkins and a long conversation." },
