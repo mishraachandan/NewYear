@@ -100,7 +100,7 @@ class App {
 
         // Slim top navigation (AP-inspired).
         if (typeof window.Nav === 'function') {
-            const nav = window.Nav(this.data.site || {});
+            const nav = window.Nav(this.data.site || {}, this.data.hero || {});
             this.appElement.appendChild(nav);
         }
 

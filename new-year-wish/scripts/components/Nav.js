@@ -9,8 +9,10 @@
  * A scroll listener adds a `.is-scrolled` class once the user has moved past
  * the hero, which the CSS can use for a denser background if desired.
  */
-window.Nav = function Nav(siteData) {
+window.Nav = function Nav(siteData, heroData) {
     const data = siteData && typeof siteData === 'object' ? siteData : {};
+    const hero = heroData && typeof heroData === 'object' ? heroData : {};
+    const safe = (v) => (v == null ? '' : String(v));
     const title = typeof data.title === 'string' && data.title.trim() ? data.title : 'Maison 2026';
     const navItems = Array.isArray(data.nav) ? data.nav : [];
 
@@ -40,14 +42,61 @@ window.Nav = function Nav(siteData) {
     // on the site config (customize.html) for potential future use.
     void navItems;
 
+    const actions = document.createElement('div');
+    actions.className = 'nav-actions';
+
     // Customize link
     const customize = document.createElement('a');
     customize.className = 'nav-customize';
     customize.href = 'customize.html';
     customize.textContent = 'Customize';
 
+    const nameRaw = safe(hero.name).trim();
+    const messageRaw = safe(hero.message).trim();
+    if (nameRaw || messageRaw) {
+        const note = document.createElement('div');
+        note.className = 'hero-floating-note';
+
+        if (nameRaw) {
+            const name = document.createElement('h2');
+            name.className = 'hero-name';
+
+            if (/\n/.test(nameRaw)) {
+                const nameHighlight = document.createElement('span');
+                nameHighlight.textContent = nameRaw;
+                Object.assign(nameHighlight.style, {
+                    color: 'var(--color-primary)',
+                    fontStyle: 'normal'
+                });
+                name.appendChild(nameHighlight);
+            } else {
+                const nameHighlight = document.createElement('span');
+                nameHighlight.textContent = nameRaw;
+                Object.assign(nameHighlight.style, {
+                    color: 'var(--color-primary)',
+                    fontStyle: 'normal'
+                });
+                name.appendChild(document.createTextNode('For '));
+                name.appendChild(nameHighlight);
+            }
+
+            note.appendChild(name);
+        }
+
+        if (messageRaw) {
+            const message = document.createElement('p');
+            message.className = 'hero-message';
+            message.textContent = messageRaw;
+            note.appendChild(message);
+        }
+
+        actions.append(customize, note);
+    } else {
+        actions.appendChild(customize);
+    }
+
     nav.appendChild(brand);
-    nav.appendChild(customize);
+    nav.appendChild(actions);
 
     function onScroll() {
         if (window.scrollY > 40) nav.classList.add('is-scrolled');

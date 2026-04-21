@@ -52,8 +52,8 @@ window.Hero = function (data, onStartCallback) {
         section.appendChild(veil);
     }
 
-    // Content wrapper — sits in the upper third so text stays above the
-    // black-hole disk glare and remains readable against the cosmic scene.
+    // Content wrapper sits in the upper third so the title keeps breathing
+    // room while the personal note now lives beneath the Customize action.
     const content = document.createElement('div');
     Object.assign(content.style, {
         position: 'relative',
@@ -108,64 +108,7 @@ window.Hero = function (data, onStartCallback) {
         animation: 'luxuryFadeIn 1.5s ease 0.5s forwards'
     });
 
-    // Name — supports multi-line input (\n in customize.html textarea).
-    // Each line is rendered in its own span so cursive layout is preserved.
-    const name = document.createElement('h2');
-    name.className = 'hero-name';
-    Object.assign(name.style, {
-        fontSize: 'clamp(1.2rem, 3vw, 1.8rem)',
-        fontFamily: 'var(--font-heading)',
-        fontWeight: '400',
-        fontStyle: 'italic',
-        color: '#dcdcdc',
-        marginBottom: '1rem',
-        textShadow: '0 2px 20px rgba(0,0,0,0.8)',
-        opacity: '0',
-        animation: 'luxuryFadeIn 1.5s ease 0.6s forwards',
-        whiteSpace: 'pre-line',
-        lineHeight: '1.35'
-    });
-
-    const nameRaw = safe(hero.name);
-    if (/\n/.test(nameRaw)) {
-        // Multi-line: show verbatim so the author controls the wording
-        // (e.g. "To the,\nMy Friend").
-        const nameHighlight = document.createElement('span');
-        nameHighlight.textContent = nameRaw;
-        Object.assign(nameHighlight.style, {
-            color: 'var(--color-primary)',
-            fontStyle: 'normal'
-        });
-        name.appendChild(nameHighlight);
-    } else {
-        const nameHighlight = document.createElement('span');
-        nameHighlight.textContent = nameRaw;
-        Object.assign(nameHighlight.style, {
-            color: 'var(--color-primary)',
-            fontStyle: 'normal'
-        });
-        name.appendChild(document.createTextNode('For '));
-        name.appendChild(nameHighlight);
-    }
-
-    // Message — also supports multi-line authoring via newlines.
-    const message = document.createElement('p');
-    message.className = 'hero-message';
-    message.textContent = safe(hero.message);
-    Object.assign(message.style, {
-        maxWidth: '520px',
-        fontSize: '1rem',
-        fontFamily: 'var(--font-body)',
-        margin: '0 auto 2.25rem auto',
-        lineHeight: '1.8',
-        color: '#cfcfcf',
-        textShadow: '0 2px 18px rgba(0,0,0,0.85)',
-        opacity: '0',
-        animation: 'luxuryFadeIn 1.5s ease 0.8s forwards',
-        whiteSpace: 'pre-line'
-    });
-
-    // CTA Button — lives in its own lower band so it sits just above the
+    // CTA Button - lives in its own lower band so it sits just above the
     // "Scroll" cue rather than being flush with the message copy. Blink
     // loop (".hero-cta" in main.css) is only applied after the fade-in
     // finishes so the first reveal doesn't feel jittery.
@@ -192,7 +135,7 @@ window.Hero = function (data, onStartCallback) {
         if (e.animationName === 'luxuryFadeIn') {
             // Clear the inline fade-in animation so the CSS class's
             // `.hero-cta.is-blinking { animation: heroCtaBlink ... }`
-            // rule can take effect — inline styles would otherwise win.
+            // rule can take effect - inline styles would otherwise win.
             btn.style.animation = '';
             btn.style.opacity = '1';
             btn.classList.add('is-blinking');
@@ -211,7 +154,7 @@ window.Hero = function (data, onStartCallback) {
 
     btn.onclick = () => {
         // Attempt to un-mute / play the background score on the first
-        // explicit user gesture — mobile + desktop browsers require
+        // explicit user gesture - mobile + desktop browsers require
         // interaction before audio with sound can start.
         if (section._audio && typeof section._audio.unlock === 'function') {
             section._audio.unlock();
@@ -268,7 +211,7 @@ window.Hero = function (data, onStartCallback) {
     scrollHint.appendChild(scrollText);
     scrollHint.appendChild(scrollLine);
 
-    content.append(greeting, year, decorLine, name, message);
+    content.append(greeting, year, decorLine);
     section.appendChild(content);
     section.appendChild(ctaBand);
     section.appendChild(scrollHint);
@@ -276,7 +219,7 @@ window.Hero = function (data, onStartCallback) {
     // Background score (optional). Plays only while the hero is on-screen.
     const audioUrl = safe(hero.audioUrl).trim();
     // Fallback to the baked-in data.js default whenever the configured URL
-    // (typically merged in from localStorage) 404s — keeps the audio working
+    // (typically merged in from localStorage) 404s - keeps the audio working
     // after a filename change in data.js, even if the browser has a stale save.
     const defaultAudioUrl = (typeof window.DATA === 'object' && window.DATA
         && window.DATA.hero && typeof window.DATA.hero.audioUrl === 'string')
