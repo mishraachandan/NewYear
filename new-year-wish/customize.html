@@ -889,6 +889,14 @@
                     <label>Completion message (shown once every wish is revealed)</label>
                     <input type="text" id="chrono-complete" placeholder="e.g. All wishes unsealed. The year is yours.">
                 </div>
+                <div class="form-group">
+                    <label>Number of spins
+                        <span class="tooltip">?
+                            <span class="tooltip-text">Total winds the user may perform before the crown locks. Each wind reveals one wish. Defaults to the number of wishes below.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="chrono-max-spins" min="1" max="50" step="1" placeholder="e.g. 6">
+                </div>
             </div>
             <div class="section">
                 <div class="section-header">
@@ -1036,6 +1044,7 @@
                 dialLabel: "2026",
                 windHint: "Wind the crown",
                 completeMessage: "All wishes unsealed. The year is yours.",
+                maxSpins: 6,
                 wishes: [
                     { numeral: "I",   title: "A Weekend Away",       body: "A reserved page in next year's calendar — a trip, together." },
                     { numeral: "II",  title: "A Candlelit Dinner",   body: "A night for cloth napkins and a long conversation." },
@@ -1139,6 +1148,8 @@
             document.getElementById('chrono-dial-label').value = currentData.chronograph.dialLabel       || '';
             document.getElementById('chrono-wind-hint').value  = currentData.chronograph.windHint        || '';
             document.getElementById('chrono-complete').value   = currentData.chronograph.completeMessage || '';
+            document.getElementById('chrono-max-spins').value  =
+                currentData.chronograph.maxSpins != null ? String(currentData.chronograph.maxSpins) : '';
             renderWishes();
 
             // Gallery
@@ -1698,6 +1709,16 @@
             currentData.chronograph.dialLabel       = document.getElementById('chrono-dial-label').value;
             currentData.chronograph.windHint        = document.getElementById('chrono-wind-hint').value;
             currentData.chronograph.completeMessage = document.getElementById('chrono-complete').value;
+            const maxSpinsRaw = document.getElementById('chrono-max-spins').value;
+            // Clamp the user input into a sane range. An empty / invalid value
+            // falls back to the number of wishes so the dial always has a
+            // well-defined stopping point.
+            const wishCount = (currentData.chronograph.wishes || []).length || 6;
+            if (maxSpinsRaw === '' || isNaN(Number(maxSpinsRaw)) || Number(maxSpinsRaw) < 1) {
+                currentData.chronograph.maxSpins = wishCount;
+            } else {
+                currentData.chronograph.maxSpins = Math.max(1, Math.min(50, Math.floor(Number(maxSpinsRaw))));
+            }
 
             // Gallery / Notes titles
             currentData.galleryTitle = document.getElementById('gallery-section-title').value;

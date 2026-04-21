@@ -15,8 +15,14 @@
  *     dialLabel: "2026",
  *     windHint: "Wind the crown",
  *     completeMessage: "All wishes unsealed. The year is yours.",
+ *     maxSpins: 6,   // optional — total allowed winds before the dial locks
  *     wishes: [{ numeral: "I", title: "...", body: "..." }, ...]
  *   }
+ *
+ * After each wind, a full-screen reveal overlay fades in with the won wish,
+ * holds briefly, then fades back to the clock so the user can wind again.
+ * The user may wind up to `maxSpins` times; once the budget is spent (or every
+ * wish has been revealed), the crown locks and the completion line is shown.
  */
 window.Chronograph = function Chronograph(chronoData) {
     const data = chronoData && typeof chronoData === 'object' ? chronoData : {};
@@ -33,6 +39,12 @@ window.Chronograph = function Chronograph(chronoData) {
     const dialLabel = data.dialLabel || '2026';
     const windHint  = data.windHint  || 'Wind the crown';
     const completeMessage = data.completeMessage || 'All wishes unsealed.';
+    // Sanitize maxSpins — fall back to wishes.length for any missing/invalid
+    // input so older saves without the field still behave like before.
+    const rawMax = Number(data.maxSpins);
+    const maxSpins = (Number.isFinite(rawMax) && rawMax > 0)
+        ? Math.floor(rawMax)
+        : wishes.length;
 
     const N = wishes.length;
     const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -184,6 +196,26 @@ window.Chronograph = function Chronograph(chronoData) {
     crown.setAttribute('aria-label', windHint);
     stage.appendChild(crown);
 
+    // Reveal overlay — sits on top of the dial and shows the won wish after
+    // each spin. Starts hidden; fades in, holds, fades back out.
+    const reveal = document.createElement('div');
+    reveal.className = 'chronograph-reveal';
+    reveal.setAttribute('aria-hidden', 'true');
+    reveal.innerHTML =
+        '<div class="chronograph-reveal-card">' +
+            '<div class="chronograph-reveal-eyebrow"></div>' +
+            '<div class="chronograph-reveal-numeral"></div>' +
+            '<h3 class="chronograph-reveal-title"></h3>' +
+            '<p class="chronograph-reveal-body"></p>' +
+            '<button type="button" class="chronograph-reveal-dismiss">Return to the dial</button>' +
+        '</div>';
+    stage.appendChild(reveal);
+    const revealEyebrow = reveal.querySelector('.chronograph-reveal-eyebrow');
+    const revealNumeral = reveal.querySelector('.chronograph-reveal-numeral');
+    const revealTitle   = reveal.querySelector('.chronograph-reveal-title');
+    const revealBody    = reveal.querySelector('.chronograph-reveal-body');
+    const revealDismiss = reveal.querySelector('.chronograph-reveal-dismiss');
+
     // ------- Hint + wishes grid -------------------------------------------
     const hint = document.createElement('p');
     hint.className = 'chronograph-hint';
@@ -228,7 +260,15 @@ window.Chronograph = function Chronograph(chronoData) {
     // ------- Spin logic ----------------------------------------------------
     let currentRotation = 0; // in degrees, can grow without bound
     let spinning = false;
+    let revealOpen = false;
+    let spinsUsed = 0;
+    let revealHoldTimer = null;
     const revealed = new Array(N).fill(false);
+
+    // How long the reveal stays on screen before the user is returned to the
+    // dial. Users can also click the dismiss button (or the overlay itself) to
+    // return early.
+    const REVEAL_HOLD_MS = 3200;
 
     function pickNextSlot() {
         // Prefer unrevealed; if all revealed, random.
@@ -239,9 +279,41 @@ window.Chronograph = function Chronograph(chronoData) {
         return unrevealed[Math.floor(Math.random() * unrevealed.length)];
     }
 
+    function openReveal(slot) {
+        const w = wishes[slot] || {};
+        revealEyebrow.textContent = 'Wind ' + Math.min(spinsUsed, maxSpins) + ' of ' + maxSpins;
+        revealNumeral.textContent = w.numeral || '';
+        revealTitle.textContent   = w.title   || '';
+        revealBody.textContent    = w.body    || '';
+        revealOpen = true;
+        reveal.setAttribute('aria-hidden', 'false');
+        // Force reflow then add .is-open so the transition runs.
+        /* eslint-disable no-unused-expressions */ reveal.offsetHeight; /* eslint-enable no-unused-expressions */
+        reveal.classList.add('is-open');
+
+        if (revealHoldTimer) clearTimeout(revealHoldTimer);
+        revealHoldTimer = setTimeout(closeReveal, REVEAL_HOLD_MS);
+    }
+
+    function closeReveal() {
+        if (!revealOpen) return;
+        revealOpen = false;
+        if (revealHoldTimer) { clearTimeout(revealHoldTimer); revealHoldTimer = null; }
+        reveal.classList.remove('is-open');
+        reveal.setAttribute('aria-hidden', 'true');
+        // Once we're fully returned to the clock, decide whether the game is over.
+        if (spinsUsed >= maxSpins || revealed.every(Boolean)) {
+            complete.classList.add('is-visible');
+            crown.classList.add('is-locked');
+            crown.setAttribute('aria-disabled', 'true');
+        }
+    }
+
     function spin() {
-        if (spinning) return;
+        if (spinning || revealOpen) return;
+        if (spinsUsed >= maxSpins) return;
         spinning = true;
+        spinsUsed += 1;
         crown.classList.add('is-winding');
 
         const slot = pickNextSlot();
@@ -284,13 +356,16 @@ window.Chronograph = function Chronograph(chronoData) {
             if (card) card.classList.add('is-revealed');
             crown.classList.remove('is-winding');
             spinning = false;
-            if (revealed.every(Boolean)) {
-                complete.classList.add('is-visible');
-            }
+            openReveal(slot);
         }, 3300);
     }
 
     crown.addEventListener('click', spin);
+    revealDismiss.addEventListener('click', function (e) { e.stopPropagation(); closeReveal(); });
+    reveal.addEventListener('click', function (e) {
+        // Clicking the backdrop (but not the card) also closes the reveal.
+        if (e.target === reveal) closeReveal();
+    });
 
     return section;
 };
