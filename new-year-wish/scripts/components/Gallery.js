@@ -1,6 +1,7 @@
 /**
  * Gallery.js - Luxury Memory Gallery
  * Features:
+ * - Curated 3-card highlight stage
  * - Scroll-reveal "appear from nothing" effect
  * - Elegant hover states
  * - Minimal luxury design
@@ -10,6 +11,8 @@ window.Gallery = function (memorySections, sectionTitle) {
     // eslint-disable-line no-unused-vars -- sectionTitle is rendered by the
     // editorial chapter-header in app.js; kept in the signature for back-compat.
     void sectionTitle;
+    const memories = Array.isArray(memorySections) ? memorySections : [];
+
     const section = document.createElement('section');
     section.className = 'gallery-section';
     Object.assign(section.style, {
@@ -17,8 +20,13 @@ window.Gallery = function (memorySections, sectionTitle) {
         background: 'var(--color-bg)'
     });
 
-    // Memory Grid
+    const highlights = createMemoryHighlights(memories, section);
+    if (highlights) {
+        section.appendChild(highlights);
+    }
+
     const grid = document.createElement('div');
+    grid.className = 'gallery-memory-grid';
     Object.assign(grid.style, {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
@@ -27,28 +35,124 @@ window.Gallery = function (memorySections, sectionTitle) {
         margin: '0 auto'
     });
 
-    memorySections.forEach((memory, index) => {
+    memories.forEach((memory, index) => {
         const card = createMemoryCard(memory, index, section);
         grid.appendChild(card);
     });
 
     section.appendChild(grid);
 
-    // Slideshow container
     const slideshowContainer = document.createElement('div');
     slideshowContainer.id = 'slideshow-container';
     slideshowContainer.style.display = 'none';
     section.appendChild(slideshowContainer);
 
-    // Scroll reveal is now handled globally by app.js
-
     return section;
 };
+
+function createMemoryHighlights(memories, parentSection) {
+    const curated = memories.filter(hasPhotos).slice(0, 3);
+    if (!curated.length) return null;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'memory-highlights';
+
+    const intro = document.createElement('div');
+    intro.className = 'memory-highlights-intro reveal-on-scroll';
+    intro.style.transitionDelay = '60ms';
+
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'memory-highlights-eyebrow';
+    eyebrow.textContent = 'Curated Frames';
+
+    const title = document.createElement('h3');
+    title.className = 'memory-highlights-title';
+    title.textContent = 'One featured memory, with two companion moments.';
+
+    const copy = document.createElement('p');
+    copy.className = 'memory-highlights-copy';
+    copy.textContent = 'A small editorial spread from your gallery, designed to spotlight the chapter before the full archive unfolds.';
+
+    intro.append(eyebrow, title, copy);
+    wrap.appendChild(intro);
+
+    const stage = document.createElement('div');
+    stage.className = 'memory-highlights-stage';
+
+    stage.appendChild(createHighlightCard(curated[0], 0, parentSection, true));
+
+    if (curated.length > 1) {
+        const rail = document.createElement('div');
+        rail.className = 'memory-highlights-rail';
+
+        curated.slice(1).forEach((memory, index) => {
+            rail.appendChild(createHighlightCard(memory, index + 1, parentSection, false));
+        });
+
+        stage.appendChild(rail);
+    }
+
+    wrap.appendChild(stage);
+    return wrap;
+}
+
+function createHighlightCard(memory, index, parentSection, isFeatured) {
+    const card = document.createElement('article');
+    card.className = 'memory-highlight-card reveal-on-scroll';
+    if (isFeatured) card.classList.add('memory-highlight-card--featured');
+    else card.classList.add('memory-highlight-card--secondary');
+    card.style.transitionDelay = `${150 + index * 120}ms`;
+
+    const image = document.createElement('img');
+    image.className = 'memory-highlight-image';
+    image.src = memory.photos[0];
+    image.alt = `${memory.title} highlight`;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'memory-highlight-overlay';
+
+    const topRow = document.createElement('div');
+    topRow.className = 'memory-highlight-toprow';
+
+    const kicker = document.createElement('span');
+    kicker.className = 'memory-highlight-kicker';
+    kicker.textContent = isFeatured ? 'Featured Memory' : 'Companion Frame';
+
+    const indexMark = document.createElement('span');
+    indexMark.className = 'memory-highlight-index';
+    indexMark.textContent = String(index + 1).padStart(2, '0');
+
+    topRow.append(kicker, indexMark);
+
+    const title = document.createElement('h4');
+    title.className = 'memory-highlight-title';
+    title.textContent = memory.title;
+
+    const meta = document.createElement('p');
+    meta.className = 'memory-highlight-meta';
+    meta.textContent = `${memory.photos.length} photographs in this chapter`;
+
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'memory-highlight-action';
+    action.textContent = isFeatured ? 'Open Featured Memory' : 'Open Memory';
+    action.setAttribute('aria-label', `Open ${memory.title}`);
+    action.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSlideshow(memory, 0, parentSection);
+    });
+
+    overlay.append(topRow, title, meta, action);
+    card.append(image, overlay);
+
+    card.addEventListener('click', () => openSlideshow(memory, 0, parentSection));
+
+    return card;
+}
 
 function createMemoryCard(memory, index, parentSection) {
     const card = document.createElement('div');
     card.className = 'memory-card reveal-on-scroll';
-    // Staggered delay based on index
     card.style.transitionDelay = `${index * 200}ms`;
 
     Object.assign(card.style, {
@@ -57,7 +161,6 @@ function createMemoryCard(memory, index, parentSection) {
         cursor: 'pointer'
     });
 
-    // Image container
     const imgContainer = document.createElement('div');
     Object.assign(imgContainer.style, {
         position: 'relative',
@@ -65,7 +168,6 @@ function createMemoryCard(memory, index, parentSection) {
         overflow: 'hidden'
     });
 
-    // Images for rotation
     let currentImageIndex = 0;
     let rotationInterval = null;
     const images = [];
@@ -89,7 +191,6 @@ function createMemoryCard(memory, index, parentSection) {
         imgContainer.appendChild(img);
     });
 
-    // Overlay with button
     const overlay = document.createElement('div');
     Object.assign(overlay.style, {
         position: 'absolute',
@@ -122,7 +223,6 @@ function createMemoryCard(memory, index, parentSection) {
     overlay.appendChild(liveBtn);
     imgContainer.appendChild(overlay);
 
-    // Counter
     const counter = document.createElement('div');
     counter.textContent = `1 / ${memory.photos.length}`;
     Object.assign(counter.style, {
@@ -137,7 +237,6 @@ function createMemoryCard(memory, index, parentSection) {
     });
     imgContainer.appendChild(counter);
 
-    // Caption
     const caption = document.createElement('div');
     Object.assign(caption.style, {
         padding: '1.5rem',
@@ -168,7 +267,6 @@ function createMemoryCard(memory, index, parentSection) {
     card.appendChild(imgContainer);
     card.appendChild(caption);
 
-    // Hover: Rotate images
     card.addEventListener('mouseenter', () => {
         overlay.style.opacity = '1';
         liveBtn.style.transform = 'translateY(0)';
@@ -231,9 +329,8 @@ function openSlideshow(memory, startIndex, parentSection) {
         container.style.transform = 'translateY(0)';
     }, 50);
 
-    // Close button
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
+    closeBtn.textContent = 'X';
     Object.assign(closeBtn.style, {
         position: 'absolute',
         top: '20px',
@@ -241,7 +338,7 @@ function openSlideshow(memory, startIndex, parentSection) {
         background: 'transparent',
         color: 'var(--color-text-muted)',
         border: 'none',
-        fontSize: '1.5rem',
+        fontSize: '1.2rem',
         cursor: 'pointer',
         transition: 'color 0.3s'
     });
@@ -254,7 +351,6 @@ function openSlideshow(memory, startIndex, parentSection) {
     });
     container.appendChild(closeBtn);
 
-    // Title
     const title = document.createElement('h3');
     title.textContent = memory.title;
     Object.assign(title.style, {
@@ -267,9 +363,9 @@ function openSlideshow(memory, startIndex, parentSection) {
     });
     container.appendChild(title);
 
-    // Main image
     const mainImage = document.createElement('img');
     mainImage.src = memory.photos[startIndex];
+    mainImage.alt = `${memory.title} full view`;
     Object.assign(mainImage.style, {
         display: 'block',
         maxWidth: '100%',
@@ -279,7 +375,6 @@ function openSlideshow(memory, startIndex, parentSection) {
     });
     container.appendChild(mainImage);
 
-    // Navigation
     const nav = document.createElement('div');
     Object.assign(nav.style, {
         display: 'flex',
@@ -316,8 +411,8 @@ function openSlideshow(memory, startIndex, parentSection) {
         return btn;
     };
 
-    const prevBtn = createNavBtn('← Prev');
-    const nextBtn = createNavBtn('Next →');
+    const prevBtn = createNavBtn('Prev');
+    const nextBtn = createNavBtn('Next');
     const indicator = document.createElement('span');
     indicator.style.color = 'var(--color-text-muted)';
     indicator.style.letterSpacing = '2px';
@@ -347,6 +442,7 @@ function openSlideshow(memory, startIndex, parentSection) {
 
     container.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
-// Scroll reveal is now handled globally by app.js initGlobalScrollReveal()
 
-
+function hasPhotos(memory) {
+    return memory && Array.isArray(memory.photos) && memory.photos.length > 0;
+}

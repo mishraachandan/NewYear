@@ -36,6 +36,10 @@
     --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 16px;
+
+    /* Motion helpers */
+    --stars-parallax-y: 0px;
+    --hero-parallax-y: 0px;
 }
 
 * {
@@ -58,6 +62,12 @@ body {
     flex-direction: column;
 }
 
+#galaxy-bg {
+    transform: translate3d(0, var(--stars-parallax-y), 0) scale(1.09);
+    transform-origin: center center;
+    will-change: transform;
+}
+
 /* Cinematic black hole canvas fills the hero section behind content */
 .hero-section .blackhole-canvas {
     position: absolute;
@@ -67,6 +77,14 @@ body {
     z-index: 0;
     pointer-events: none;
     display: block;
+}
+
+.hero-section .blackhole-canvas,
+.hero-section .hero-bg,
+.hero-section .hero-bg-veil {
+    transform: translate3d(0, var(--hero-parallax-y), 0) scale(1.07);
+    transform-origin: center 54%;
+    will-change: transform;
 }
 
 /* Soft vignette / readability veil over the black hole scene.
@@ -178,21 +196,41 @@ button {
 /* Luxury Scroll Reveal - Cinematic Materialization */
 .reveal-on-scroll {
     opacity: 0;
-    transform: translateY(100px) scale(0.9) rotateX(10deg);
-    filter: blur(10px);
+    --reveal-distance: 108px;
+    transform: translate3d(0, var(--reveal-distance), 0) scale(0.92) rotateX(11deg);
+    filter: blur(12px);
     transition:
-        opacity 1.5s cubic-bezier(0.2, 0.8, 0.2, 1),
-        transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1),
-        filter 1.2s ease-out;
+        opacity 1.3s cubic-bezier(0.16, 0.84, 0.22, 1),
+        transform 1.55s cubic-bezier(0.16, 0.84, 0.22, 1),
+        filter 1.18s ease-out;
     will-change: transform, opacity, filter;
     pointer-events: none;
 }
 
 .reveal-on-scroll.revealed {
     opacity: 1;
-    transform: translateY(0) scale(1) rotateX(0);
+    transform: translate3d(0, 0, 0) scale(1) rotateX(0);
     filter: blur(0);
     pointer-events: auto;
+}
+
+.reveal-on-scroll--chapter {
+    --reveal-distance: 66px;
+    transform: translate3d(0, var(--reveal-distance), 0) scale(0.965);
+}
+
+.reveal-on-scroll--section {
+    --reveal-distance: 86px;
+}
+
+.reveal-on-scroll--divider {
+    --reveal-distance: 36px;
+    transform: translate3d(0, var(--reveal-distance), 0) scaleX(0.74);
+    filter: blur(8px);
+}
+
+.reveal-on-scroll--divider.revealed {
+    transform: translate3d(0, 0, 0) scaleX(1);
 }
 
 /* Base hidden state for the main content wrapper */
@@ -355,15 +393,59 @@ button {
 /* Thin gold hairline used as a divider between sections */
 .editorial-rule {
     display: block;
-    width: 80px;
+    position: relative;
+    width: min(240px, 62vw);
+    height: 28px;
+    margin: 3.35rem auto;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+}
+
+.editorial-rule::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
     height: 1px;
-    margin: 3rem auto;
+    transform: translateY(-50%);
     background: linear-gradient(
         to right,
         rgba(201, 169, 98, 0),
-        rgba(201, 169, 98, 0.75),
+        rgba(201, 169, 98, 0.44) 18%,
+        rgba(201, 169, 98, 0.92) 50%,
+        rgba(201, 169, 98, 0.44) 82%,
         rgba(201, 169, 98, 0)
     );
+    box-shadow:
+        0 0 18px rgba(201, 169, 98, 0.18),
+        0 0 34px rgba(201, 169, 98, 0.08);
+}
+
+.editorial-rule::after {
+    content: '\2726';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    transform: translate(-50%, -50%);
+    color: rgba(226, 194, 96, 0.94);
+    font-size: 0.84rem;
+    line-height: 1;
+    text-shadow:
+        0 0 18px rgba(201, 169, 98, 0.45),
+        0 0 32px rgba(212, 175, 55, 0.22);
+    background: radial-gradient(
+        circle,
+        rgba(25, 18, 6, 0.92) 0%,
+        rgba(12, 12, 12, 0.86) 58%,
+        rgba(12, 12, 12, 0) 100%
+    );
+    box-shadow: 0 0 18px rgba(201, 169, 98, 0.12);
 }
 
 /* Editorial footer */
@@ -381,6 +463,239 @@ button {
     height: 1px;
     margin: 0 auto 1.5rem auto;
     background: rgba(201, 169, 98, 0.55);
+}
+
+/* Gallery highlight spread */
+.memory-highlights {
+    max-width: 1200px;
+    margin: 0 auto 3.75rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+}
+
+.memory-highlights-intro {
+    max-width: 660px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.memory-highlights-eyebrow {
+    color: var(--color-primary);
+    font-size: 0.74rem;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+}
+
+.memory-highlights-title {
+    color: var(--color-text-main);
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(1.8rem, 3.8vw, 3rem);
+    line-height: 1.05;
+    margin: 0;
+}
+
+.memory-highlights-copy {
+    color: rgba(245, 245, 245, 0.7);
+    max-width: 52ch;
+    margin: 0;
+}
+
+.memory-highlights-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.92fr);
+    gap: 1.25rem;
+}
+
+.memory-highlights-rail {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.memory-highlight-card {
+    position: relative;
+    min-height: 260px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(201, 169, 98, 0.18);
+    background:
+        radial-gradient(circle at top, rgba(201, 169, 98, 0.12), transparent 48%),
+        #090909;
+    box-shadow:
+        0 24px 54px rgba(0, 0, 0, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition:
+        transform 0.55s ease,
+        border-color 0.55s ease,
+        box-shadow 0.55s ease;
+}
+
+.memory-highlight-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(8, 8, 10, 0.06) 0%, rgba(8, 8, 10, 0.68) 100%),
+        linear-gradient(130deg, rgba(201, 169, 98, 0.2) 0%, transparent 42%);
+    z-index: 1;
+}
+
+.memory-highlight-card--featured {
+    min-height: 540px;
+}
+
+.memory-highlight-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.03);
+    transition:
+        transform 0.9s ease,
+        filter 0.9s ease;
+}
+
+.memory-highlight-overlay {
+    position: relative;
+    z-index: 2;
+    min-height: inherit;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.9rem;
+    padding: 1.5rem;
+}
+
+.memory-highlight-card--featured .memory-highlight-overlay {
+    padding: 2rem;
+}
+
+.memory-highlight-toprow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.memory-highlight-kicker,
+.memory-highlight-index {
+    color: rgba(245, 245, 245, 0.78);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+}
+
+.memory-highlight-index {
+    color: var(--color-primary);
+}
+
+.memory-highlight-title {
+    margin: 0;
+    color: var(--color-text-main);
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 2.7vw, 2.35rem);
+    line-height: 1.05;
+}
+
+.memory-highlight-card--secondary .memory-highlight-title {
+    font-size: clamp(1.15rem, 2vw, 1.6rem);
+}
+
+.memory-highlight-meta {
+    margin: 0;
+    color: rgba(245, 245, 245, 0.72);
+    max-width: 28ch;
+}
+
+.memory-highlight-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    padding: 0.82rem 1.4rem;
+    background: transparent;
+    border: 1px solid rgba(201, 169, 98, 0.75);
+    color: var(--color-primary);
+    font-size: 0.72rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    transition:
+        background 0.35s ease,
+        color 0.35s ease,
+        transform 0.35s ease,
+        box-shadow 0.35s ease;
+}
+
+.memory-highlight-card:hover,
+.memory-highlight-card:focus-within {
+    transform: translateY(-8px);
+    border-color: rgba(201, 169, 98, 0.4);
+    box-shadow:
+        0 30px 72px rgba(0, 0, 0, 0.38),
+        0 0 28px rgba(201, 169, 98, 0.12);
+}
+
+.memory-highlight-card:hover .memory-highlight-image,
+.memory-highlight-card:focus-within .memory-highlight-image {
+    transform: scale(1.08);
+    filter: saturate(1.03);
+}
+
+.memory-highlight-action:hover,
+.memory-highlight-action:focus-visible {
+    background: var(--color-primary);
+    color: var(--color-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(201, 169, 98, 0.22);
+}
+
+.memory-highlight-card:focus-visible {
+    outline: 1px solid rgba(201, 169, 98, 0.5);
+    outline-offset: 2px;
+}
+
+@media (max-width: 980px) {
+    .memory-highlights-stage {
+        grid-template-columns: 1fr;
+    }
+
+    .memory-highlights-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .memory-highlight-card--featured {
+        min-height: 460px;
+    }
+}
+
+@media (max-width: 640px) {
+    .memory-highlights {
+        margin-bottom: 2.75rem;
+    }
+
+    .memory-highlights-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .memory-highlight-card,
+    .memory-highlight-card--featured {
+        min-height: 320px;
+    }
+
+    .memory-highlight-overlay,
+    .memory-highlight-card--featured .memory-highlight-overlay {
+        padding: 1.2rem;
+    }
+
+    .memory-highlight-action {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* Chronograph (new game) base styles */
@@ -1185,6 +1500,29 @@ button {
     .site-nav .hero-floating-note .hero-message {
         font-size: 0.82rem !important;
         line-height: 1.5;
+    }
+
+    .editorial-rule {
+        width: min(180px, 70vw);
+        margin: 2.6rem auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #galaxy-bg,
+    .hero-section .blackhole-canvas,
+    .hero-section .hero-bg,
+    .hero-section .hero-bg-veil {
+        transform: none !important;
+    }
+
+    .reveal-on-scroll,
+    .reveal-on-scroll--chapter,
+    .reveal-on-scroll--section,
+    .reveal-on-scroll--divider {
+        transition: opacity 0.01ms linear;
+        transform: none;
+        filter: none;
     }
 }
 /* =========================================================================
